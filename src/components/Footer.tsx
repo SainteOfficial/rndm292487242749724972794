@@ -221,6 +221,7 @@ const Footer = () => {
                     <p className="font-medium text-white mb-2">Telefon</p>
                     <p className="text-gray-400">+49 2306 9988585</p>
                     <p className="text-gray-400">+49 176 7036 1769</p>
+                    <p className="text-gray-400">+49 1515 3366666</p>
                   </div>
                 </div>
                 <div className="bg-[#1a1c25] rounded-lg p-4 flex items-start space-x-4">

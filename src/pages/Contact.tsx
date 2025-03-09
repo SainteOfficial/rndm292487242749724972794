@@ -89,6 +89,7 @@ const Contact = () => {
                     <p className="font-semibold">Telefon</p>
                     <p>+49 2306 9988585</p>
                     <p>+49 176 7036 1769</p>
+                    <p>+49 1515 3366666</p>
                   </div>
                 </div>
                 
@@ -170,7 +171,7 @@ const Contact = () => {
                     id="name"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full bg-gray-800 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                    className="w-full bg-gray-800 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400 transition-all duration-300"
                     required
                   />
                 </div>
@@ -184,7 +185,7 @@ const Contact = () => {
                     id="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full bg-gray-800 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                    className="w-full bg-gray-800 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400 transition-all duration-300"
                     required
                   />
                 </div>
@@ -200,7 +201,7 @@ const Contact = () => {
                     id="phone"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full bg-gray-800 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                    className="w-full bg-gray-800 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400 transition-all duration-300"
                   />
                 </div>
 
@@ -212,13 +213,11 @@ const Contact = () => {
                     id="subject"
                     value={formData.subject}
                     onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                    className="w-full bg-gray-800 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                    className="w-full bg-gray-800 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400 transition-all duration-300"
                     required
                   >
                     <option value="Fahrzeuganfrage">Fahrzeuganfrage</option>
                     <option value="Probefahrt">Probefahrt vereinbaren</option>
-                    <option value="Finanzierung">Finanzierungsanfrage</option>
-                    <option value="Service">Service & Wartung</option>
                     <option value="Allgemeine Anfrage">Allgemeine Anfrage</option>
                   </select>
                 </div>
@@ -232,7 +231,7 @@ const Contact = () => {
                   id="message"
                   value={formData.message}
                   onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                  className="w-full bg-gray-800 text-white rounded-lg px-4 py-2 h-32 resize-none focus:outline-none focus:ring-2 focus:ring-orange-400"
+                  className="w-full bg-gray-800 text-white rounded-lg px-4 py-2 h-32 resize-none focus:outline-none focus:ring-2 focus:ring-orange-400 transition-all duration-300"
                   required
                 />
               </div>
@@ -308,12 +307,16 @@ const Contact = () => {
                 </label>
               </div>
               
-              <button
-                type="submit"
-                className="bg-gradient-to-r from-[#14A79D] to-[#EBA530] text-white px-6 py-3 rounded-full hover:scale-95 transition-transform duration-200 w-full"
-              >
-                Nachricht senden
-              </button>
+              <div className="mt-8">
+                <motion.button
+                  type="submit"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="w-full bg-gradient-to-r from-orange-500 to-orange-400 text-white py-3 rounded-lg font-medium shadow-lg hover:shadow-orange-500/20 transition-all duration-300"
+                >
+                  Nachricht senden
+                </motion.button>
+              </div>
 
               <p className="text-gray-400 text-sm text-center">
                 * Pflichtfelder
