@@ -40,7 +40,8 @@ const Legal = () => {
               <div className="bg-[#1a1c25]/50 p-4 rounded-lg">
                 <h3 className="font-semibold text-white mb-2">Kontakt</h3>
                 <p className="text-gray-300">Tel: +49 2306 9988585</p>
-                <p className="text-gray-300">Mobil: +49 176 7036 1769</p>
+                <p className="text-gray-300">Mobil 1: +49 176 7036 1769</p>
+                <p className="text-gray-300">Mobil 2: +49 1515 3366666</p>
                 <p className="text-gray-300">E-Mail: kfzhandelsmaya@autosmaya.info</p>
               </div>
 
@@ -63,23 +64,21 @@ const Legal = () => {
             </div>
             <div className="space-y-4">
               <div className="bg-[#1a1c25]/50 p-4 rounded-lg">
-                <h3 className="font-semibold text-white mb-2">Aufsichtsbehörde</h3>
-                <p className="text-gray-300">IHK Berlin</p>
-                <p className="text-gray-300">Fasanenstraße 85</p>
-                <p className="text-gray-300">10623 Berlin</p>
+                <h3 className="font-semibold text-white mb-2">Unternehmensform</h3>
+                <p className="text-gray-300">Einzelunternehmen</p>
               </div>
               
               <div className="bg-[#1a1c25]/50 p-4 rounded-lg">
-                <h3 className="font-semibold text-white mb-2">Berufsbezeichnung</h3>
+                <h3 className="font-semibold text-white mb-2">Gewerbe</h3>
                 <p className="text-gray-300">Kraftfahrzeughandel</p>
-                <p className="text-gray-300">Verliehen in: Deutschland</p>
+                <p className="text-gray-300">Gewerbeanmeldung: Stadt Lünen</p>
               </div>
               
               <div className="bg-[#1a1c25]/50 p-4 rounded-lg">
-                <h3 className="font-semibold text-white mb-2">Berufskammer</h3>
-                <p className="text-gray-300">Zentralverband Deutsches Kraftfahrzeuggewerbe</p>
-                <p className="text-gray-300">Franz-Lohe-Str. 21</p>
-                <p className="text-gray-300">53129 Bonn</p>
+                <h3 className="font-semibold text-white mb-2">Kammerzugehörigkeit</h3>
+                <p className="text-gray-300">Industrie- und Handelskammer zu Dortmund</p>
+                <p className="text-gray-300">Märkische Straße 120</p>
+                <p className="text-gray-300">44141 Dortmund</p>
               </div>
             </div>
           </motion.div>
@@ -98,9 +97,9 @@ const Legal = () => {
             <div className="bg-[#1a1c25]/50 p-6 rounded-lg">
               <h3 className="text-xl font-semibold text-white mb-4">1. Datenschutz auf einen Blick</h3>
               <p className="text-gray-300 leading-relaxed">
-                Die Autosmaya GmbH nimmt den Schutz Ihrer persönlichen Daten sehr ernst. 
-                Wir behandeln Ihre personenbezogenen Daten vertraulich und entsprechend 
-                der gesetzlichen Datenschutzvorschriften sowie dieser Datenschutzerklärung.
+                Autosmaya (Inhaber: Salah-Eddine Khammale) nimmt den Schutz Ihrer persönlichen Daten sehr ernst. 
+                Wir behandeln Ihre personenbezogenen Daten vertraulich und entsprechend der EU-Datenschutz-Grundverordnung (DSGVO) 
+                sowie dieser Datenschutzerklärung.
               </p>
             </div>
 
@@ -108,18 +107,22 @@ const Legal = () => {
               <h3 className="text-xl font-semibold text-white mb-4">2. Datenerfassung auf unserer Website</h3>
               <div className="space-y-4">
                 <div>
-                  <h4 className="text-lg font-medium text-white mb-2">Cookies</h4>
+                  <h4 className="text-lg font-medium text-white mb-2">Cookies und Analyse-Tools</h4>
                   <p className="text-gray-300 leading-relaxed">
-                    Unsere Website verwendet Cookies. Das sind kleine Textdateien, die Ihr 
-                    Webbrowser auf Ihrem Endgerät speichert. Cookies helfen uns dabei, unser 
-                    Angebot nutzerfreundlicher, effektiver und sicherer zu machen.
+                    Unsere Website verwendet Cookies. Dies sind kleine Textdateien, die Ihr 
+                    Webbrowser auf Ihrem Endgerät speichert. Die meisten der von uns verwendeten 
+                    Cookies sind sogenannte "Session-Cookies", die nach Ende Ihres Besuchs 
+                    automatisch gelöscht werden. Andere Cookies bleiben auf Ihrem Endgerät gespeichert, 
+                    bis Sie diese löschen oder die Speicherdauer abläuft.
                   </p>
                 </div>
                 <div>
                   <h4 className="text-lg font-medium text-white mb-2">Server-Log-Dateien</h4>
                   <p className="text-gray-300 leading-relaxed">
-                    Der Provider der Seiten erhebt und speichert automatisch Informationen in 
-                    so genannten Server-Log-Dateien, die Ihr Browser automatisch an uns übermittelt.
+                    Der Provider speichert automatisch Informationen in Server-Log-Dateien, die Ihr Browser 
+                    automatisch übermittelt. Dies sind: Browsertyp und -version, verwendetes Betriebssystem, 
+                    Referrer URL, Hostname des zugreifenden Rechners, Uhrzeit der Serveranfrage, IP-Adresse. 
+                    Diese Daten werden nicht mit anderen Datenquellen zusammengeführt.
                   </p>
                 </div>
               </div>
@@ -128,20 +131,24 @@ const Legal = () => {
             <div className="bg-[#1a1c25]/50 p-6 rounded-lg">
               <h3 className="text-xl font-semibold text-white mb-4">3. Ihre Rechte</h3>
               <p className="text-gray-300 leading-relaxed">
-                Sie haben jederzeit das Recht auf unentgeltliche Auskunft über Ihre 
-                gespeicherten personenbezogenen Daten, deren Herkunft und Empfänger und 
-                den Zweck der Datenverarbeitung sowie ein Recht auf Berichtigung, 
-                Sperrung oder Löschung dieser Daten.
+                Sie haben folgende Rechte hinsichtlich Ihrer personenbezogenen Daten:
               </p>
+              <ul className="list-disc list-inside text-gray-300 leading-relaxed mt-2 space-y-2">
+                <li>Recht auf Auskunft</li>
+                <li>Recht auf Berichtigung oder Löschung</li>
+                <li>Recht auf Einschränkung der Verarbeitung</li>
+                <li>Recht auf Widerspruch gegen die Verarbeitung</li>
+                <li>Recht auf Datenübertragbarkeit</li>
+              </ul>
             </div>
 
             <div className="bg-[#1a1c25]/50 p-6 rounded-lg">
-              <h3 className="text-xl font-semibold text-white mb-4">4. Kontaktformular</h3>
+              <h3 className="text-xl font-semibold text-white mb-4">4. Kontaktformular und Kommunikation</h3>
               <p className="text-gray-300 leading-relaxed">
-                Wenn Sie uns per Kontaktformular Anfragen zukommen lassen, werden Ihre 
-                Angaben aus dem Anfrageformular inklusive der von Ihnen dort angegebenen 
-                Kontaktdaten zwecks Bearbeitung der Anfrage und für den Fall von 
-                Anschlussfragen bei uns gespeichert.
+                Wenn Sie uns kontaktieren (z.B. per Kontaktformular, E-Mail, Telefon), werden Ihre Angaben 
+                zur Bearbeitung der Anfrage und für den Fall von Anschlussfragen bei uns gespeichert. 
+                Diese Daten geben wir nicht ohne Ihre Einwilligung weiter. Die Verarbeitung erfolgt auf 
+                Grundlage von Art. 6 Abs. 1 lit. b DSGVO.
               </p>
             </div>
           </div>
@@ -160,67 +167,68 @@ const Legal = () => {
             <div className="bg-[#1a1c25]/50 p-6 rounded-lg">
               <h3 className="text-xl font-semibold text-white mb-4">§1 Geltungsbereich</h3>
               <p className="text-gray-300 leading-relaxed">
-                Diese Allgemeinen Geschäftsbedingungen gelten für alle gegenwärtigen 
-                und zukünftigen Geschäftsbeziehungen zwischen der Autosmaya GmbH und 
-                ihren Kunden.
+                Diese Allgemeinen Geschäftsbedingungen gelten für alle Geschäftsbeziehungen zwischen 
+                Autosmaya (Inhaber: Salah-Eddine Khammale) und unseren Kunden. Maßgeblich ist die 
+                jeweils zum Zeitpunkt des Vertragsschlusses gültige Fassung.
               </p>
             </div>
 
             <div className="bg-[#1a1c25]/50 p-6 rounded-lg">
-              <h3 className="text-xl font-semibold text-white mb-4">§2 Vertragsschluss</h3>
+              <h3 className="text-xl font-semibold text-white mb-4">§2 Vertragsschluss und Angebot</h3>
               <p className="text-gray-300 leading-relaxed">
-                Der Kaufvertrag kommt durch Angebot und Annahme zustande. Unsere 
-                Angebote sind freibleibend. Technische Änderungen sowie Änderungen 
-                in Form, Farbe und/oder Gewicht bleiben im Rahmen des Zumutbaren 
-                vorbehalten.
+                Unsere Angebote sind freibleibend und unverbindlich. Technische und sonstige Änderungen 
+                in Form, Farbe, Gewicht oder Design bleiben im Rahmen des Zumutbaren vorbehalten. 
+                Der Kaufvertrag kommt erst durch unsere schriftliche Auftragsbestätigung oder durch 
+                Übergabe der Ware zustande.
               </p>
             </div>
 
             <div className="bg-[#1a1c25]/50 p-6 rounded-lg">
-              <h3 className="text-xl font-semibold text-white mb-4">§3 Eigentumsvorbehalt</h3>
+              <h3 className="text-xl font-semibold text-white mb-4">§3 Preise und Zahlung</h3>
               <p className="text-gray-300 leading-relaxed">
-                Die Ware bleibt bis zur vollständigen Bezahlung unser Eigentum. 
-                Vor Übergang des Eigentums ist eine Verpfändung, 
-                Sicherungsübereignung, Verarbeitung oder Umgestaltung ohne unsere 
-                Zustimmung nicht gestattet.
+                Alle Preise verstehen sich in Euro inklusive der gesetzlichen Mehrwertsteuer. 
+                Der Kaufpreis ist bei Übergabe des Fahrzeugs fällig. Die Übergabe erfolgt nur gegen 
+                vollständige Zahlung des Kaufpreises oder nach schriftlicher Finanzierungsbestätigung.
               </p>
             </div>
 
             <div className="bg-[#1a1c25]/50 p-6 rounded-lg">
-              <h3 className="text-xl font-semibold text-white mb-4">§4 Gewährleistung</h3>
+              <h3 className="text-xl font-semibold text-white mb-4">§4 Gewährleistung und Garantie</h3>
               <p className="text-gray-300 leading-relaxed">
-                Es gelten die gesetzlichen Gewährleistungsrechte. Bei gebrauchten 
-                Fahrzeugen beträgt die Gewährleistungsfrist ein Jahr ab Übergabe 
-                des Fahrzeugs.
+                Bei gebrauchten Fahrzeugen verjähren die Ansprüche des Käufers wegen Mängeln in einem Jahr 
+                ab Übergabe. Die Verkürzung der Verjährungsfrist gilt nicht für Schadensersatzansprüche 
+                aus grob fahrlässiger oder vorsätzlicher Pflichtverletzung. Garantien im Rechtssinne 
+                erhält der Kunde durch uns nicht, sofern nicht ausdrücklich schriftlich vereinbart.
               </p>
             </div>
 
             <div className="bg-[#1a1c25]/50 p-6 rounded-lg">
-              <h3 className="text-xl font-semibold text-white mb-4">§5 Haftung</h3>
+              <h3 className="text-xl font-semibold text-white mb-4">§5 Eigentumsvorbehalt</h3>
               <p className="text-gray-300 leading-relaxed">
-                Wir haften unbeschränkt für Vorsatz und grobe Fahrlässigkeit sowie 
-                nach Maßgabe des Produkthaftungsgesetzes. Für leichte Fahrlässigkeit 
-                haften wir bei Schäden aus der Verletzung des Lebens, des Körpers 
-                und der Gesundheit von Personen.
+                Das Fahrzeug bleibt bis zur vollständigen Bezahlung unser Eigentum. Während der Dauer 
+                des Eigentumsvorbehalts steht das Recht zum Besitz des Fahrzeugbriefes uns zu. 
+                Bei Zugriffen Dritter auf die Vorbehaltsware wird der Käufer auf unser Eigentum hinweisen 
+                und uns unverzüglich benachrichtigen.
               </p>
             </div>
 
             <div className="bg-[#1a1c25]/50 p-6 rounded-lg">
-              <h3 className="text-xl font-semibold text-white mb-4">§6 Widerrufsrecht</h3>
+              <h3 className="text-xl font-semibold text-white mb-4">§6 Probefahrten</h3>
               <p className="text-gray-300 leading-relaxed">
-                Verbrauchern steht ein Widerrufsrecht nach Maßgabe der im Anhang 
-                aufgeführten Widerrufsbelehrung zu. Unternehmern wird kein 
-                freiwilliges Widerrufsrecht eingeräumt.
+                Für Probefahrten ist ein gültiger Führerschein und Personalausweis vorzulegen. 
+                Der Kunde haftet für Schäden, die während der Probefahrt am Fahrzeug entstehen, 
+                soweit diese von ihm zu vertreten sind. Der Kunde hat das Fahrzeug pfleglich zu 
+                behandeln und alle für die Benutzung maßgeblichen Vorschriften zu beachten.
               </p>
             </div>
 
             <div className="bg-[#1a1c25]/50 p-6 rounded-lg">
               <h3 className="text-xl font-semibold text-white mb-4">§7 Schlussbestimmungen</h3>
               <p className="text-gray-300 leading-relaxed">
-                Es gilt das Recht der Bundesrepublik Deutschland. Erfüllungsort 
-                und Gerichtsstand ist Berlin, soweit der Kunde Kaufmann, juristische 
-                Person des öffentlichen Rechts oder öffentlich-rechtliches 
-                Sondervermögen ist.
+                Es gilt das Recht der Bundesrepublik Deutschland. Erfüllungsort ist Lünen. 
+                Gerichtsstand für alle Streitigkeiten aus diesem Vertrag ist, soweit gesetzlich zulässig, 
+                Lünen. Sollten einzelne Bestimmungen unwirksam sein, bleibt die Wirksamkeit der übrigen 
+                Bestimmungen unberührt.
               </p>
             </div>
           </div>
