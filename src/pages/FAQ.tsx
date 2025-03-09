@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Minus } from 'lucide-react';
 import PageTransition from '../components/PageTransition';
 import ScrollReveal from '../components/ScrollReveal';
@@ -56,33 +56,67 @@ const FAQ = () => {
 
           <div className="space-y-4">
             {faqs.map((faq, index) => (
-              <ScrollReveal key={index}>
+              <ScrollReveal key={index} delay={index * 0.1}>
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
-                  className="bg-gradient-to-br from-[#16181f]/60 to-[#1e2029]/60 backdrop-blur-md rounded-lg border border-gray-800 overflow-hidden"
+                  className="bg-gradient-to-br from-[#16181f]/60 to-[#1e2029]/60 backdrop-blur-md rounded-lg border border-gray-800 overflow-hidden hover:border-gray-700 transition-colors duration-300"
                 >
-                  <button
+                  <motion.button
                     onClick={() => setOpenIndex(openIndex === index ? null : index)}
                     className="w-full px-6 py-4 flex items-center justify-between text-left"
+                    whileHover={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
+                    whileTap={{ scale: 0.99 }}
                   >
                     <span className="text-lg font-semibold text-white">{faq.question}</span>
-                    {openIndex === index ? (
-                      <Minus className="w-5 h-5 text-orange-400 flex-shrink-0" />
-                    ) : (
-                      <Plus className="w-5 h-5 text-orange-400 flex-shrink-0" />
+                    <motion.div
+                      animate={{ rotate: openIndex === index ? 180 : 0 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      {openIndex === index ? (
+                        <Minus className="w-5 h-5 text-orange-400 flex-shrink-0" />
+                      ) : (
+                        <Plus className="w-5 h-5 text-orange-400 flex-shrink-0" />
+                      )}
+                    </motion.div>
+                  </motion.button>
+                  
+                  <AnimatePresence>
+                    {openIndex === index && (
+                      <motion.div 
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="px-6 pb-6 pt-2">
+                          <p className="text-gray-300 leading-relaxed">{faq.answer}</p>
+                        </div>
+                      </motion.div>
                     )}
-                  </button>
-                  {openIndex === index && (
-                    <div className="px-6 pb-4">
-                      <p className="text-gray-300 leading-relaxed">{faq.answer}</p>
-                    </div>
-                  )}
+                  </AnimatePresence>
                 </motion.div>
               </ScrollReveal>
             ))}
           </div>
+          
+          <ScrollReveal delay={0.5}>
+            <div className="mt-12 text-center">
+              <p className="text-gray-300 mb-4">
+                Haben Sie weitere Fragen?
+              </p>
+              <motion.a
+                href="/contact"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="inline-block bg-gradient-to-r from-orange-500 to-orange-400 text-white px-8 py-3 rounded-full font-medium shadow-lg hover:shadow-orange-500/20 transition-all duration-300"
+              >
+                Kontaktieren Sie uns
+              </motion.a>
+            </div>
+          </ScrollReveal>
         </div>
       </div>
     </PageTransition>
