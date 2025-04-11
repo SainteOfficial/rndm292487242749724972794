@@ -12,6 +12,7 @@ import Legal from './pages/Legal';
 import CarDetails from './pages/CarDetails';
 import Admin from './pages/Admin';
 import AdminLogin from './pages/AdminLogin';
+import Gallery from './pages/Gallery';
 import { AnimatedBackground } from './components/AnimatedBackground';
 import BackToTop from './components/BackToTop';
 import { supabase } from './lib/supabase';
@@ -73,6 +74,7 @@ function AnimatedRoutes() {
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<Home />} />
         <Route path="/showroom" element={<Showroom />} />
+        <Route path="/gallery" element={<Gallery />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/faq" element={<FAQ />} />
         <Route path="/legal" element={<Legal />} />

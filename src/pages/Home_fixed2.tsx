@@ -39,7 +39,7 @@ const testimonials = [
   },
   {
     name: "Laura W.",
-    text: "Ich war zunächst skeptisch, aber der gesamte Kaufprozess verlief absolut reibungslos. Mein Mercedes ist in einem hervorragenden Zustand und zu einem fairen Preis.",
+    text: "Ich war zunÃ¤chst skeptisch, aber der gesamte Kaufprozess verlief absolut reibungslos. Mein Mercedes ist in einem hervorragenden Zustand und zu einem fairen Preis.",
     rating: 5,
     car: "Mercedes E-Klasse",
     date: "Januar 2024",
@@ -47,15 +47,15 @@ const testimonials = [
   },
   {
     name: "Thomas K.",
-    text: "Sehr kompetente Beratung und faire Preisgestaltung. Mein Audi A6 wurde vor der Übergabe perfekt aufbereitet und sieht aus wie neu.",
+    text: "Sehr kompetente Beratung und faire Preisgestaltung. Mein Audi A6 wurde vor der Ãœbergabe perfekt aufbereitet und sieht aus wie neu.",
     rating: 4,
     car: "Audi A6",
-    date: "März 2024",
+    date: "MÃ¤rz 2024",
     color: "#8b5cf6"
   },
   {
     name: "Sophie M.",
-    text: "Ich hatte einige spezielle Anforderungen und das Team hat alles getan, um diese zu erfüllen. Der Porsche ist genau wie beschrieben - ich bin begeistert!",
+    text: "Ich hatte einige spezielle Anforderungen und das Team hat alles getan, um diese zu erfÃ¼llen. Der Porsche ist genau wie beschrieben - ich bin begeistert!",
     rating: 5,
     car: "Porsche Macan",
     date: "Dezember 2023",
@@ -63,7 +63,7 @@ const testimonials = [
   },
   {
     name: "Andreas H.",
-    text: "Die Transparenz und Ehrlichkeit hat mich überzeugt. Ein kleines Problem nach dem Kauf wurde sofort und kulant behoben. So sollte es sein!",
+    text: "Die Transparenz und Ehrlichkeit hat mich Ã¼berzeugt. Ein kleines Problem nach dem Kauf wurde sofort und kulant behoben. So sollte es sein!",
     rating: 4,
     car: "VW Golf GTI",
     date: "Februar 2024", 
@@ -107,12 +107,12 @@ const brands = [
   }
 ];
 
-// Kompakte Vorteile für "Warum Autosmaya"
+// Kompakte Vorteile fÃ¼r "Warum Autosmaya"
 const benefits = [
   { 
     icon: Shield, 
-    title: "Garantierte Qualität", 
-    desc: "Lückenlose Fahrzeughistorie & 12 Monate Garantie",
+    title: "Garantierte QualitÃ¤t", 
+    desc: "LÃ¼ckenlose Fahrzeughistorie & 12 Monate Garantie",
     color: "#14A79D"
   },
   { 
@@ -124,13 +124,13 @@ const benefits = [
   { 
     icon: Award, 
     title: "Premium-Auswahl", 
-    desc: "Nur geprüfte Top-Fahrzeuge renommierter Hersteller",
+    desc: "Nur geprÃ¼fte Top-Fahrzeuge renommierter Hersteller",
     color: "#8b5cf6" 
   },
   { 
     icon: Star, 
-    title: "Persönlicher Service", 
-    desc: "Individuell auf Ihre Wünsche abgestimmt",
+    title: "PersÃ¶nlicher Service", 
+    desc: "Individuell auf Ihre WÃ¼nsche abgestimmt",
     color: "#ec4899" 
   }
 ];
@@ -250,7 +250,7 @@ const Home = () => {
           <div className="max-w-7xl mx-auto h-full px-4 sm:px-6">
             {/* Hintergrund-Elemente mit Motion-Effekten */}
             <div className="absolute inset-0 overflow-hidden">
-              {/* Große schwebende Rechtecke im Hintergrund */}
+              {/* GroÃŸe schwebende Rechtecke im Hintergrund */}
                 <motion.div
                 initial={{ opacity: 0, rotate: -5 }}
                 animate={{ opacity: 0.1, rotate: 5 }}
@@ -311,7 +311,55 @@ const Home = () => {
               >
                 {/* Moderne, professionelle Headline */}
                 <div className="mb-10 relative mt-6">
-                  <div className="h-20"></div>
+                  {/* Dekorative Linien */}
+                  <motion.div
+                    initial={{ width: 0, opacity: 0 }}
+                    animate={{ width: "35%", opacity: 0.3 }}
+                    transition={{ duration: 1.2, delay: 0.5 }}
+                    className="absolute top-1/2 left-0 h-[1px] bg-gradient-to-r from-[#14A79D] to-transparent"
+                  ></motion.div>
+                  
+                  {/* Dekorativer Abstand statt Logo */}
+                  <div className="h-10"></div>
+                  
+                  {/* ERSETZT DURCH LEEREN SPACE */}
+                  <div className="h-6"></div>
+                  
+                  <motion.div 
+                    initial={{ width: 0, opacity: 0 }}
+                    animate={{ width: "35%", opacity: 0.3 }}
+                    transition={{ duration: 1.2, delay: 0.5 }}
+                    className="absolute top-1/2 right-0 h-[1px] bg-gradient-to-l from-[#14A79D] to-transparent"
+                  ></motion.div>
+                  
+                  {/* Statt Ãœberschrift: Elegantes Logo mit Animation */}
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 1, delay: 0.2 }}
+                    className="mb-6 flex justify-center"
+                  >
+                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#14A79D]/20 to-transparent backdrop-blur-sm flex items-center justify-center">
+                      <div className="relative text-2xl font-bold text-white tracking-widest">
+                        <div class=" h-10\></div>
+                        <motion.div 
+                          animate={{ 
+                            opacity: [0.5, 1, 0.5],
+                            scale: [1, 1.05, 1]
+                          }}
+                          transition={{ 
+                            repeat: Infinity,
+                            duration: 3,
+                            ease: "easeInOut"
+                          }}
+                          className="absolute -inset-3 rounded-full bg-[#14A79D]/20 -z-10"
+                        ></motion.div>
+                      </div>
+                    </div>
+                  </motion.div>
+                  
+                  {/* ERSETZT DURCH LEEREN SPACE */}
+                  <div className="h-6"></div>
                 </div>
                 
                 {/* Moderne, professionelle Headline */}
@@ -331,7 +379,7 @@ const Home = () => {
                     className="absolute top-1/2 right-0 h-[1px] bg-gradient-to-l from-[#14A79D] to-transparent"
                   ></motion.div>
                   
-                  {/* Hauptüberschrift mit gestaffeltem Reveal-Effekt */}
+                  {/* HauptÃ¼berschrift mit gestaffeltem Reveal-Effekt */}
                   <div className="overflow-hidden mb-2">
                     <motion.div
                       initial={{ y: "100%" }}
@@ -339,7 +387,7 @@ const Home = () => {
                       transition={{ duration: 0.7, delay: 0.1 }}
                     >
                       <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight text-white uppercase">
-                        Luxuriöse
+                        LuxuriÃ¶se
                       </h1>
                     </motion.div>
                   </div>
@@ -366,7 +414,7 @@ const Home = () => {
                 >
                   <div className="px-6">
                     <p className="text-base sm:text-lg text-gray-300 leading-relaxed font-light">
-                      <span className="text-white/90">Premium Autoerlebnis</span> – Einzigartige Fahrzeuge, die höchsten Ansprüchen gerecht werden. <span className="text-[#14A79D]">Autosmaya</span> steht für Exklusivität, Qualität und erstklassigen Service.
+                      <span className="text-white/90">Premium Autoerlebnis</span> â€“ Einzigartige Fahrzeuge, die hÃ¶chsten AnsprÃ¼chen gerecht werden. <span className="text-[#14A79D]">Autosmaya</span> steht fÃ¼r ExklusivitÃ¤t, QualitÃ¤t und erstklassigen Service.
                     </p>
                   </div>
                   
@@ -510,7 +558,7 @@ const Home = () => {
                 <div className="absolute top-[-10%] right-[-5%] w-[40%] h-[40%] bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#14A79D]/10 via-[#14A79D]/5 to-transparent blur-3xl opacity-60"></div>
                 <div className="absolute bottom-[-10%] left-[-5%] w-[40%] h-[40%] bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-orange-500/5 via-orange-500/3 to-transparent blur-3xl opacity-60"></div>
                 
-                {/* Subtile Animationen für mehr Dynamik, passend zum Hero-Bereich */}
+                {/* Subtile Animationen fÃ¼r mehr Dynamik, passend zum Hero-Bereich */}
                 <motion.div
                   animate={{ 
                     scale: [1, 1.05, 1],
@@ -538,7 +586,7 @@ const Home = () => {
                   className="absolute bottom-[30%] left-[20%] w-40 h-40 rounded-full bg-gradient-to-br from-orange-500/8 to-transparent mix-blend-screen blur-3xl"
                 />
                 
-                {/* Schwebende Partikel, ähnlich wie im Featured Cars Bereich */}
+                {/* Schwebende Partikel, Ã¤hnlich wie im Featured Cars Bereich */}
                 <div className="absolute inset-0 overflow-hidden opacity-30">
                   <motion.div
                     animate={{ y: [0, -20, 0], x: [0, 10, 0] }}
@@ -558,7 +606,7 @@ const Home = () => {
                 </div>
               </div>
               
-              {/* Überschrift mit 3D-Tiefeneffekt */}
+              {/* Ãœberschrift mit 3D-Tiefeneffekt */}
               <div className="relative mx-auto max-w-7xl px-6 lg:px-8 mb-16 pt-16">
                 <motion.div 
             initial={{ opacity: 0, y: 20 }}
@@ -580,9 +628,9 @@ const Home = () => {
                     </div>
                   </motion.div>
                   
-                  {/* Überschriften-Stack mit 3D-Effekt */}
+                  {/* Ãœberschriften-Stack mit 3D-Effekt */}
                   <div className="relative">
-                    {/* Schattenkopie für Tiefeneffekt */}
+                    {/* Schattenkopie fÃ¼r Tiefeneffekt */}
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       whileInView={{ opacity: 0.1, y: 0 }}
@@ -591,11 +639,11 @@ const Home = () => {
                       className="absolute left-1/2 -translate-x-[50.5%] translate-y-[3px] w-full text-center invisible sm:visible"
                     >
                       <span className="text-3xl md:text-5xl lg:text-6xl font-bold text-black">
-                        Luxuriöse Fahrerlebnisse
+                        LuxuriÃ¶se Fahrerlebnisse
                       </span>
                     </motion.div>
                     
-                    {/* Hauptüberschrift */}
+                    {/* HauptÃ¼berschrift */}
                     <motion.h2
                       initial={{ opacity: 0, y: -20 }}
                       whileInView={{ opacity: 1, y: 0 }}
@@ -604,7 +652,7 @@ const Home = () => {
                       className="text-3xl md:text-5xl lg:text-6xl font-bold relative z-10"
                     >
                       <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#14A79D] via-white to-[#14A79D]">
-                        Luxuriöse Fahrerlebnisse
+                        LuxuriÃ¶se Fahrerlebnisse
                       </span>
                     </motion.h2>
                   </div>
@@ -625,11 +673,11 @@ const Home = () => {
                     <div className="absolute left-0 bottom-0 w-full h-px bg-gradient-to-r from-transparent via-[#14A79D]/40 to-transparent"></div>
                     
                     <p className="text-xl md:text-2xl text-white relative z-10 font-bold text-center mb-2">
-                      Warum sich unsere Kunden für <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#14A79D] to-white">Autosmaya</span> entscheiden
+                      Warum sich unsere Kunden fÃ¼r <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#14A79D] to-white">Autosmaya</span> entscheiden
                     </p>
                     
                     <p className="text-sm md:text-base text-gray-300 text-center relative z-10">
-                      Exklusive Auswahl, persönlicher Service und kompromisslose Qualität auf höchstem Niveau
+                      Exklusive Auswahl, persÃ¶nlicher Service und kompromisslose QualitÃ¤t auf hÃ¶chstem Niveau
                     </p>
                   </motion.div>
                   
@@ -803,9 +851,9 @@ const Home = () => {
                     </div>
                     
                     <div className="text-center mb-10">
-                      <h3 className="text-xl md:text-2xl font-bold text-white mb-3">Vertrauenswürdige Premium-Qualität</h3>
+                      <h3 className="text-xl md:text-2xl font-bold text-white mb-3">VertrauenswÃ¼rdige Premium-QualitÃ¤t</h3>
                       <p className="text-sm md:text-base text-gray-300 max-w-2xl mx-auto">
-                        Als führender Anbieter von Premiumfahrzeugen setzen wir höchste Standards für Qualität, Service und Kundenzufriedenheit.
+                        Als fÃ¼hrender Anbieter von Premiumfahrzeugen setzen wir hÃ¶chste Standards fÃ¼r QualitÃ¤t, Service und Kundenzufriedenheit.
                       </p>
                     </div>
                     
@@ -833,7 +881,7 @@ const Home = () => {
                         </div>
                         <div className="text-left">
                           <div className="text-lg font-bold text-white">100%</div>
-                          <div className="text-xs text-gray-400">TÜV-geprüfte Fahrzeuge</div>
+                          <div className="text-xs text-gray-400">TÃœV-geprÃ¼fte Fahrzeuge</div>
                         </div>
                       </motion.div>
                       
@@ -899,7 +947,7 @@ const Home = () => {
               </span>
             </h2>
             <p className="text-sm md:text-base text-gray-300 max-w-2xl mx-auto mt-4">
-              Handverlesene Auswahl exklusiver Fahrzeuge höchster Qualität
+              Handverlesene Auswahl exklusiver Fahrzeuge hÃ¶chster QualitÃ¤t
             </p>
           </motion.div>
 
@@ -913,7 +961,7 @@ const Home = () => {
             </div>
           ) : (
             <div className="relative">
-              {/* Neuer Hintergrund mit dynamischen Elementen für die Fahrzeuge */}
+              {/* Neuer Hintergrund mit dynamischen Elementen fÃ¼r die Fahrzeuge */}
               <div className="absolute inset-0 overflow-hidden">
                 <motion.div
                   animate={{ 
@@ -941,35 +989,35 @@ const Home = () => {
                 />
               </div>
               
-              {/* Optimiertes Grid-Layout für 1-3 Fahrzeuge */}
+              {/* Optimiertes Grid-Layout fÃ¼r 1-3 Fahrzeuge */}
               <div className={`grid ${featuredCars.length === 1 ? 'md:grid-cols-1 max-w-2xl mx-auto' : 'md:grid-cols-2'} gap-8`}>
-              {featuredCars.map((car, index) => (
-                <motion.div
-                  key={car.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
+                {featuredCars.map((car, index) => (
+                  <motion.div
+                    key={car.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
                     transition={{ delay: index * 0.2 }}
                     className="group rounded-xl overflow-hidden relative bg-gradient-to-br from-[#1e2029]/90 to-[#16181f]/80 backdrop-blur-md border border-white/5"
-                >
-                    {/* Hover-Gradient-Effekt für die gesamte Karte */}
+                  >
+                    {/* Hover-Gradient-Effekt fÃ¼r die gesamte Karte */}
                     <div className="absolute inset-0 bg-gradient-to-br from-[#14A79D]/0 to-transparent opacity-0 group-hover:opacity-10 transition-all duration-500"></div>
                     
                     {/* Verbesserte Bildanzeige mit Premium-Rahmen */}
-                  <div className="relative aspect-[16/9] overflow-hidden">
-                      {/* Dekorative Eckelemente für Premium-Look */}
+                    <div className="relative aspect-[16/9] overflow-hidden">
+                      {/* Dekorative Eckelemente fÃ¼r Premium-Look */}
                       <div className="absolute top-2 left-2 w-4 h-4 border-t-2 border-l-2 border-[#14A79D]/50 z-20"></div>
                       <div className="absolute top-2 right-2 w-4 h-4 border-t-2 border-r-2 border-[#14A79D]/50 z-20"></div>
                       <div className="absolute bottom-2 left-2 w-4 h-4 border-b-2 border-l-2 border-[#14A79D]/50 z-20"></div>
                       <div className="absolute bottom-2 right-2 w-4 h-4 border-b-2 border-r-2 border-[#14A79D]/50 z-20"></div>
                       
-                    <img
-                      src={car.images[0]}
-                      alt={`${car.brand} ${car.model}`}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                      loading="lazy"
-                    />
-                    
+                      <img
+                        src={car.images[0]}
+                        alt={`${car.brand} ${car.model}`}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                        loading="lazy"
+                      />
+                      
                       {/* Premium Overlay mit verbessertem Lichteffekt */}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-60 group-hover:opacity-70 transition-opacity duration-300" />
                       
@@ -982,46 +1030,46 @@ const Home = () => {
                       <div className="absolute inset-0 bg-[url('/luxury-pattern.svg')] bg-repeat opacity-0 group-hover:opacity-10 transition-opacity duration-500"></div>
                       
                       {/* Enhanced Favorite Button */}
-                    <motion.button
-                      onClick={(e) => toggleFavorite(car.id, e)}
-                      whileHover={{ scale: 1.15 }}
-                      whileTap={{ scale: 0.9 }}
-                      className={cn(
-                          "absolute top-3 right-3 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full backdrop-blur-sm transition-all duration-300 z-20",
-                        favorites.includes(car.id) 
-                          ? "bg-orange-400 shadow-lg shadow-orange-500/20" 
-                            : "bg-black/40 hover:bg-black/60 border border-white/10"
-                      )}
-                    >
-                      <Heart 
+                      <motion.button
+                        onClick={(e) => toggleFavorite(car.id, e)}
+                        whileHover={{ scale: 1.15 }}
+                        whileTap={{ scale: 0.9 }}
                         className={cn(
-                            "w-5 h-5 md:w-6 md:h-6", 
+                          "absolute top-3 right-3 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full backdrop-blur-sm transition-all duration-300 z-20",
                           favorites.includes(car.id) 
-                            ? "fill-white text-white" 
-                            : "text-white"
-                        )} 
-                      />
+                            ? "bg-orange-400 shadow-lg shadow-orange-500/20" 
+                            : "bg-black/40 hover:bg-black/60 border border-white/10"
+                        )}
+                      >
+                        <Heart 
+                          className={cn(
+                            "w-5 h-5 md:w-6 md:h-6", 
+                            favorites.includes(car.id) 
+                              ? "fill-white text-white" 
+                              : "text-white"
+                          )} 
+                        />
+                        
+                        {/* Pulse effect for favorited cars */}
+                        {favorites.includes(car.id) && (
+                          <div className="absolute inset-0 rounded-full bg-orange-400 animate-ping opacity-30"></div>
+                        )}
+                      </motion.button>
                       
-                      {/* Pulse effect for favorited cars */}
-                      {favorites.includes(car.id) && (
-                        <div className="absolute inset-0 rounded-full bg-orange-400 animate-ping opacity-30"></div>
-                      )}
-                    </motion.button>
-                    
                       {/* Enhanced Price Tag */}
-                    <motion.div
-                      initial={{ y: 0 }}
-                      animate={{ y: [0, -3, 0] }}
-                      transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
+                      <motion.div
+                        initial={{ y: 0 }}
+                        animate={{ y: [0, -3, 0] }}
+                        transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
                         className="absolute top-3 left-3 bg-gradient-to-r from-[#14A79D] to-[#14A79D]/80 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-lg z-20"
-                    >
-                      €{car.price.toLocaleString()}
-                    </motion.div>
-                  </div>
+                      >
+                        â‚¬{car.price.toLocaleString()}
+                      </motion.div>
+                    </div>
 
                     {/* Verbesserte Content-Section */}
                     <div className="p-6 md:p-8 relative">
-                      {/* Glaseffekt-Hintergrund für Premium-Look */}
+                      {/* Glaseffekt-Hintergrund fÃ¼r Premium-Look */}
                       <div className="absolute inset-0 bg-gradient-to-br from-[#14A79D]/5 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
                       
                       {/* Animated Accent Line */}
@@ -1034,7 +1082,7 @@ const Home = () => {
                         </h3>
                         <div className="flex items-center gap-2 mb-4">
                           <div className="h-0.5 w-10 bg-[#14A79D]/60"></div>
-                          <p className="text-gray-400 text-sm">{car.year} • {car.specs.fuelType}</p>
+                          <p className="text-gray-400 text-sm">{car.year} â€¢ {car.specs.fuelType}</p>
                         </div>
                       </div>
                       
@@ -1048,7 +1096,7 @@ const Home = () => {
                             <p className="text-xs text-gray-400">Leistung</p>
                             <p className="text-white">{car.specs.power}</p>
                           </div>
-                          </div>
+                        </div>
                         
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-lg bg-[#14A79D]/10 flex items-center justify-center">
@@ -1057,9 +1105,9 @@ const Home = () => {
                           <div>
                             <p className="text-xs text-gray-400">Laufleistung</p>
                             <p className="text-white">{car.mileage.toLocaleString()} km</p>
-                      </div>
-                    </div>
-
+                          </div>
+                        </div>
+                        
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-lg bg-[#14A79D]/10 flex items-center justify-center">
                             <Settings className="w-4 h-4 text-[#14A79D]" />
@@ -1097,11 +1145,11 @@ const Home = () => {
                         <span className="relative z-10 py-3 px-6 text-white font-medium flex items-center justify-center gap-2">
                           <span>Fahrzeug details</span>
                           <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
-                      </span>
+                        </span>
                       </Link>
-                  </div>
-                </motion.div>
-              ))}
+                    </div>
+                  </motion.div>
+                ))}
                 
                 {/* Premium Platzhalter-Karte, wenn nur ein Fahrzeug vorhanden ist */}
                 {featuredCars.length === 1 && (
@@ -1229,19 +1277,19 @@ const Home = () => {
                 <span className="inline-block">Erfahrungen</span>{" "}
                 <span className="inline-block relative">
                   zufriedener 
-            <motion.div 
+                  <motion.div 
                     className="absolute -bottom-2 left-0 w-full h-1 bg-gradient-to-r from-[#14A79D]/10 via-[#14A79D] to-[#14A79D]/10"
-              initial={{ width: 0 }}
+                    initial={{ width: 0 }}
                     whileInView={{ width: "100%" }}
-              viewport={{ once: true }}
+                    viewport={{ once: true }}
                     transition={{ duration: 0.8, delay: 0.3 }}
-            ></motion.div>
+                  ></motion.div>
                 </span>{" "}
                 <span className="inline-block">Kunden</span>
               </h2>
               
               <p className="mt-4 text-gray-300 max-w-2xl mx-auto">
-                Entdecken Sie, warum sich unsere Kunden für Autosmaya entschieden haben und wie 
+                Entdecken Sie, warum sich unsere Kunden fÃ¼r Autosmaya entschieden haben und wie 
                 wir ihnen geholfen haben, ihr Traumfahrzeug zu finden.
               </p>
             </motion.div>
@@ -1329,23 +1377,23 @@ const Home = () => {
             {/* Verbesserte Testimonial-Karten */}
             <div className="flex overflow-hidden">
               <AnimatePresence initial={false} mode="wait">
-              <motion.div
-                key={activeTestimonial}
+                <motion.div
+                  key={activeTestimonial}
                   initial={{ opacity: 0, x: 100 }}
-                animate={{ opacity: 1, x: 0 }}
+                  animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -100 }}
                   transition={{ type: "spring", damping: 25, stiffness: 150 }}
                   className="w-full grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-8"
                 >
                   {/* Hauptkarte */}
                   <div className="md:col-span-2 relative rounded-2xl overflow-hidden">
-                    {/* Luxuriöse Karte mit Schattierungseffekten */}
+                    {/* LuxuriÃ¶se Karte mit Schattierungseffekten */}
                     <div className="relative h-full bg-gradient-to-br from-[#1c1e27]/90 to-[#16181f]/80 backdrop-blur-md border border-white/10 p-6 md:p-10 overflow-hidden">
                       {/* Dekorative Akzente */}
                       <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-[#14A79D]/10 to-transparent blur-3xl"></div>
                       <div className="absolute -left-5 -bottom-5 w-32 h-32 rounded-full bg-gradient-to-br from-orange-500/10 to-transparent blur-2xl"></div>
                       
-                      {/* Anführungszeichen */}
+                      {/* AnfÃ¼hrungszeichen */}
                       <div className="mb-2">
                         <div className="relative w-12 h-12 rounded-full bg-[#14A79D]/10 flex items-center justify-center">
                           <span className="text-[#14A79D] text-2xl font-serif">"</span>
@@ -1388,17 +1436,17 @@ const Home = () => {
                           
                           <div className="flex items-center">
                             <div className="flex mr-2">
-                  {[...Array(5)].map((_, i) => (
-                        <Star 
-                          key={i} 
+                              {[...Array(5)].map((_, i) => (
+                                <Star 
+                                  key={i} 
                                   className={`w-4 h-4 ${i < testimonials[activeTestimonial].rating ? "text-yellow-400 fill-yellow-400" : "text-gray-600"}`} 
-                        />
-                      ))}
+                                />
+                              ))}
                             </div>
                             <span className="text-sm text-gray-400">Kundenbewertung</span>
                           </div>
-                    </div>
-                
+                        </div>
+                        
                         <div className="flex items-center p-2 rounded-lg bg-white/5 border border-white/10">
                           <div className="mr-2">
                             <Car className="w-5 h-5" style={{ color: testimonials[activeTestimonial].color }} />
@@ -1412,7 +1460,7 @@ const Home = () => {
                     </div>
                   </div>
                   
-                  {/* Sekundäre Karten - Zeigt die nächsten 2 Testimonials an */}
+                  {/* SekundÃ¤re Karten - Zeigt die nÃ¤chsten 2 Testimonials an */}
                   <div className="hidden md:flex flex-col gap-5">
                     {[
                       (activeTestimonial + 1) % testimonials.length,
@@ -1435,16 +1483,16 @@ const Home = () => {
                           </div>
                           
                           {/* Kompakte Info */}
-                <div className="flex items-center justify-between">
-                  <div>
+                          <div className="flex items-center justify-between">
+                            <div>
                               <p className="font-medium text-white text-sm">{testimonials[index].name}</p>
                               <div className="flex items-center mt-1">
                                 {[...Array(testimonials[index].rating)].map((_, i) => (
                                   <Star key={i} className="w-3 h-3 text-yellow-400 fill-yellow-400" />
                                 ))}
                               </div>
-                    </div>
-                  
+                            </div>
+                            
                             <div className="flex items-center gap-1.5 text-xs rounded-full px-2 py-1" style={{ 
                               backgroundColor: `${testimonials[index].color}15`,
                               color: testimonials[index].color 
@@ -1455,7 +1503,7 @@ const Home = () => {
                           </div>
                           
                           {/* Hover-Akzent */}
-                  <motion.div 
+                          <motion.div
                             initial={{ width: 0 }}
                             whileInView={{ width: "0%" }}
                             whileHover={{ width: "100%" }}
@@ -1467,11 +1515,11 @@ const Home = () => {
                             }}
                           ></motion.div>
                         </div>
-                  </motion.div>
+                      </motion.div>
                     ))}
-                    </div>
-                  </motion.div>
-            </AnimatePresence>
+                  </div>
+                </motion.div>
+              </AnimatePresence>
             </div>
             
             {/* Verbesserte Statistiken - Zufriedenheitswerte */}
@@ -1484,7 +1532,7 @@ const Home = () => {
             >
               {[
                 { label: "Zufriedene Kunden", value: "98%", icon: Users, color: "#14A79D" },
-                { label: "Wiederholungskäufer", value: "76%", icon: RepeatIcon, color: "#f97316" },
+                { label: "WiederholungskÃ¤ufer", value: "76%", icon: RepeatIcon, color: "#f97316" },
                 { label: "Weiterempfehlungen", value: "9/10", icon: Share2, color: "#8b5cf6" }
               ].map((stat, i) => (
                 <motion.div
@@ -1522,8 +1570,8 @@ const Home = () => {
                 </motion.div>
               ))}
             </motion.div>
-                    </div>
-              
+          </div>
+          
           {/* Verbesserter Link zu allen Bewertungen */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -1539,10 +1587,10 @@ const Home = () => {
               <span className="text-white group-hover:text-[#14A79D] transition-colors duration-300">Alle Bewertungen ansehen</span>
               <div className="w-8 h-8 rounded-full bg-[#14A79D]/10 flex items-center justify-center group-hover:bg-[#14A79D]/20 transition-all duration-300">
                 <ArrowRight className="w-4 h-4 text-[#14A79D] group-hover:translate-x-0.5 transition-transform duration-300" />
-                    </div>
+              </div>
             </Link>
           </motion.div>
-                    </div>
+        </div>
       </section>
 
       {/* Compact CTA with enhanced effects */}
@@ -1553,13 +1601,13 @@ const Home = () => {
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#14A79D]/30 to-transparent"></div>
         
         {/* Animierte Gradientenkreise */}
-          <motion.div 
-            animate={{ 
+        <motion.div
+          animate={{ 
             scale: [1, 1.1, 1],
             opacity: [0.3, 0.5, 0.3] 
-            }}
-            transition={{ 
-              repeat: Infinity, 
+          }}
+          transition={{ 
+            repeat: Infinity, 
             duration: 15,
             ease: "easeInOut"
           }}
@@ -1601,23 +1649,23 @@ const Home = () => {
                 <div className="absolute top-2/3 right-1/4 w-1 h-1 rounded-full bg-white/20 animate-float-particle3"></div>
               </div>
               
-              {/* Horizontale Linie mit Glühen */}
+              {/* Horizontale Linie mit GlÃ¼hen */}
               <motion.div 
                 initial={{ opacity: 0, width: 0 }}
                 whileInView={{ opacity: 1, width: "100%" }}
                 viewport={{ once: true }}
                 transition={{ duration: 1.5 }}
                 className="absolute top-0 left-0 h-px bg-gradient-to-r from-transparent via-[#14A79D]/40 to-transparent"
-          ></motion.div>
-          </div>
-
+              ></motion.div>
+            </div>
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-0 p-8 md:p-0">
-              {/* Linke Hälfte - Text und Features */}
+              {/* Linke HÃ¤lfte - Text und Features */}
               <div className="md:py-16 md:px-12 md:pr-4">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
                   transition={{ duration: 0.6 }}
                 >
                   <div className="inline-flex items-center py-1 px-3 mb-6 rounded-full bg-[#14A79D]/10 border border-[#14A79D]/20">
@@ -1630,11 +1678,11 @@ const Home = () => {
                   </div>
                   
                   <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-6 leading-tight">
-                    Erleben Sie <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#14A79D] to-white">außergewöhnliche</span> Automobile
+                    Erleben Sie <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#14A79D] to-white">auÃŸergewÃ¶hnliche</span> Automobile
                   </h2>
                   
                   <p className="text-gray-300 mb-10 max-w-lg">
-                    Kontaktieren Sie uns noch heute und entdecken Sie, warum Autosmaya Ihre erste Wahl für exklusive Premium-Fahrzeuge ist.
+                    Kontaktieren Sie uns noch heute und entdecken Sie, warum Autosmaya Ihre erste Wahl fÃ¼r exklusive Premium-Fahrzeuge ist.
                   </p>
                   
                   {/* Neue Feature-Punkte */}
@@ -1642,13 +1690,13 @@ const Home = () => {
                     {[
                       { icon: Shield, text: "12 Monate Garantie auf alle Fahrzeuge" },
                       { icon: Clock, text: "Schneller, unkomplizierter Kaufprozess" },
-                      { icon: Star, text: "Persönliche Beratung durch Experten" }
+                      { icon: Star, text: "PersÃ¶nliche Beratung durch Experten" }
                     ].map((feature, index) => (
                       <motion.div
                         key={index}
                         initial={{ opacity: 0, x: -20 }}
                         whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
+                        viewport={{ once: true }}
                         transition={{ duration: 0.4, delay: 0.1 + (index * 0.1) }}
                         className="flex items-center gap-4"
                       >
@@ -1673,17 +1721,17 @@ const Home = () => {
                 </motion.div>
               </div>
               
-              {/* Rechte Hälfte - CTA */}
+              {/* Rechte HÃ¤lfte - CTA */}
               <div className="hidden md:block relative">
-                {/* Hintergrund mit Akzent für den CTA-Bereich */}
+                {/* Hintergrund mit Akzent fÃ¼r den CTA-Bereich */}
                 <div className="absolute inset-0 bg-gradient-to-br from-[#14A79D]/20 to-transparent"></div>
                 <div className="absolute inset-0 bg-[url('/luxury-pattern.svg')] bg-repeat opacity-5"></div>
                 
                 <div className="relative h-full flex flex-col items-center justify-center p-12">
-            <motion.div
+                  <motion.div
                     initial={{ opacity: 0, scale: 0.9 }}
                     whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
+                    viewport={{ once: true }}
                     transition={{ duration: 0.7, delay: 0.2 }}
                     className="w-full max-w-lg bg-gradient-to-br from-[#1c1e27]/80 to-[#16181f]/95 backdrop-blur-md rounded-2xl border border-white/10 p-8 md:p-10 shadow-2xl"
                   >
@@ -1703,7 +1751,7 @@ const Home = () => {
                         <Mail className="w-7 h-7 text-white" />
                       </motion.div>
                       
-                      <h3 className="text-2xl font-bold text-white mb-2">Bereit für Ihr Traumfahrzeug?</h3>
+                      <h3 className="text-2xl font-bold text-white mb-2">Bereit fÃ¼r Ihr Traumfahrzeug?</h3>
                       <p className="text-gray-300 mb-6">
                         Unser Team von Experten steht Ihnen bei jedem Schritt zur Seite
                       </p>
@@ -1714,12 +1762,12 @@ const Home = () => {
                       whileHover={{ scale: 1.03 }}
                       whileTap={{ scale: 0.98 }}
                       className="relative"
-            >
-          <Link
-            to="/contact"
+                    >
+                      <Link
+                        to="/contact"
                         className="group relative block w-full overflow-hidden"
                       >
-                        {/* Hintergrund-Glühen */}
+                        {/* Hintergrund-GlÃ¼hen */}
                         <motion.div
                           animate={{ 
                             opacity: [0.6, 1, 0.6],
@@ -1733,7 +1781,7 @@ const Home = () => {
                           className="absolute -inset-1 rounded-xl opacity-30 blur-md bg-gradient-to-r from-[#14A79D] to-[#14A79D]/70"
                         ></motion.div>
                         
-                        {/* Primärer Button */}
+                        {/* PrimÃ¤rer Button */}
                         <div className="relative">
                           <div className="p-px rounded-xl bg-gradient-to-r from-[#14A79D] via-[#0a968c] to-[#14A79D] shadow-xl">
                             <div className="px-8 py-4 rounded-[calc(0.75rem-1px)] bg-gradient-to-br from-[#14A79D] to-[#0c7b74] relative overflow-hidden">
@@ -1754,8 +1802,8 @@ const Home = () => {
                             </div>
                           </div>
                         </div>
-          </Link>
-            </motion.div>
+                      </Link>
+                    </motion.div>
                     
                     {/* Vertrauenshinweise */}
                     <div className="mt-8 pt-6 border-t border-white/10">
@@ -1769,8 +1817,8 @@ const Home = () => {
                           <span>24h Antwortzeit</span>
                         </div>
                       </div>
-        </div>
-        </motion.div>
+                    </div>
+                  </motion.div>
                   
                   {/* Dekorative Elemente */}
                   <motion.div
@@ -1807,3 +1855,4 @@ const Home = () => {
 };
 
 export default Home;
+

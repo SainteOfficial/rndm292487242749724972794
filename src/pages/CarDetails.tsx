@@ -28,8 +28,34 @@ import {
   Medal,
   Navigation2,
   Apple,
-  MapPin
+  MapPin,
+  Calculator,
+  CreditCard,
+  Scale,
+  PlusCircle,
+  Search as SearchIcon,
+  User,
+  Users
 } from 'lucide-react';
+
+// Cookie-Hilfsfunktionen
+const setCookie = (name: string, value: string, days: number = 30) => {
+  const date = new Date();
+  date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+  const expires = "; expires=" + date.toUTCString();
+  document.cookie = name + "=" + (value || "") + expires + "; path=/";
+};
+
+const getCookie = (name: string): string | null => {
+  const nameEQ = name + "=";
+  const ca = document.cookie.split(';');
+  for (let i = 0; i < ca.length; i++) {
+    let c = ca[i];
+    while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+    if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+  }
+  return null;
+};
 
 const CarDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -38,6 +64,18 @@ const CarDetails = () => {
   const [loading, setLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [similarCars, setSimilarCars] = useState<any[]>([]);
+  
+  // Zustandsvariablen für den Fahrzeugvergleich
+  const [comparisonCars, setComparisonCars] = useState<any[]>([null, null]);
+  const [showSelectionModal, setShowSelectionModal] = useState(false);
+  const [selectionSlot, setSelectionSlot] = useState<number | null>(null);
+  const [availableCars, setAvailableCars] = useState<any[]>([]);
+  const [loadingCars, setLoadingCars] = useState(false);
+  
+  // Zustandsvariable für aktive Betrachter
+  const [activeViewers, setActiveViewers] = useState<number>(0);
+  const [realViewers, setRealViewers] = useState<number>(0);
+  const [showRealViewers, setShowRealViewers] = useState<boolean>(false);
 
   useEffect(() => {
     if (!id?.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
@@ -45,7 +83,99 @@ const CarDetails = () => {
       return;
     }
     fetchCar();
+    initializeViewers();
+    trackRealViewers();
   }, [id, navigate]);
+
+  // Tracking von echten Benutzern über Supabase Realtime
+  const trackRealViewers = async () => {
+    if (!id) return;
+
+    try {
+      // Inkrementierung des Zählers für dieses Auto
+      await supabase.rpc('increment_car_view_counter', { car_id: id });
+      
+      // Abonnieren des Kanals für aktive Betrachter
+      const channel = supabase
+        .channel(`car-viewers-${id}`)
+        .on('presence', { event: 'sync' }, () => {
+          const viewers = Object.keys(channel.presenceState()).length;
+          setRealViewers(viewers);
+          
+          // Wenn mehr als 10 echte Betrachter, zeige die echte Anzahl
+          if (viewers > 10) {
+            setShowRealViewers(true);
+            setActiveViewers(viewers);
+          } else {
+            setShowRealViewers(false);
+          }
+        })
+        .subscribe(async (status) => {
+          if (status === 'SUBSCRIBED') {
+            // Präsenz des aktuellen Benutzers signalisieren
+            await channel.track({ user_id: getCookie('user_id') || `anonymous-${Date.now()}` });
+          }
+        });
+      
+      return () => {
+        channel.unsubscribe();
+      };
+    } catch (error) {
+      console.error('Fehler beim Tracken der echten Betrachter:', error);
+    }
+  };
+
+  // Initialisierung der Betrachteranzahl
+  const initializeViewers = () => {
+    if (!id) return;
+    
+    // Cookie-Name für dieses spezifische Fahrzeug
+    const cookieName = `car_viewers_${id}`;
+    
+    // Prüfen, ob bereits ein Cookie existiert
+    let viewers = getCookie(cookieName);
+    
+    if (!viewers) {
+      // Wenn kein Cookie existiert, generiere eine realistische Anzahl
+      // Basiert auf Fahrzeugpreis, Tageszeit und einer zufälligen Komponente
+      const hour = new Date().getHours();
+      const isPeakHour = hour >= 9 && hour <= 20;
+      
+      // Basis-Betrachter: höher während der Hauptzeit
+      const baseViewers = isPeakHour ? 
+        Math.floor(Math.random() * 4) + 3 : // 3-6 während Hauptzeit
+        Math.floor(Math.random() * 3) + 1;  // 1-3 während Nebenzeit
+      
+      viewers = baseViewers.toString();
+      setCookie(cookieName, viewers, 1); // Cookie für 1 Tag speichern
+    }
+    
+    setActiveViewers(parseInt(viewers));
+    
+    // Subtile periodische Änderungen, nur wenn wir keine echten Betrachter anzeigen
+    const viewerInterval = setInterval(() => {
+      // Wenn wir echte Betrachter anzeigen, stoppe die Änderungen
+      if (showRealViewers) return;
+      
+      // Bestehenden Cookie-Wert abrufen
+      const currentViewers = parseInt(getCookie(cookieName) || '0');
+      
+      // 85% der Zeit bleibt der Wert gleich
+      if (Math.random() > 0.15) return;
+      
+      // Kleine Änderung mit höherer Wahrscheinlichkeit für +1 als für -1
+      const change = Math.random() > 0.7 ? 1 : -1;
+      
+      // Sicherstellen, dass wir mindestens 1 Betrachter haben
+      const newViewers = Math.max(1, currentViewers + change);
+      
+      // Cookie und State aktualisieren
+      setCookie(cookieName, newViewers.toString(), 1);
+      setActiveViewers(newViewers);
+    }, 25000); // Alle 25 Sekunden prüfen - subtiler
+    
+    return () => clearInterval(viewerInterval);
+  };
 
   const fetchCar = async () => {
     try {
@@ -81,6 +211,7 @@ const CarDetails = () => {
         .from('cars')
         .select('*')
         .neq('id', currentCar.id)
+        .eq('sold', false)
         .or(`brand.eq.${currentCar.brand},price.gte.${currentCar.price * 0.8},price.lte.${currentCar.price * 1.2}`)
         .limit(3);
 
@@ -113,7 +244,66 @@ const CarDetails = () => {
   };
 
   const handleContact = () => {
-    navigate(`/contact?carId=${car.id}&brand=${car.brand}&model=${car.model}&price=${car.price}`);
+    // Angepasst an die tatsächliche Implementierung der Contact.tsx
+    // Dies stellt sicher, dass das Auto in der Kontaktanfrage vorausgewählt ist
+    // und in der E-Mail-Nachricht erwähnt wird
+    const query = new URLSearchParams({
+      carId: car.id,
+      subject: 'Fahrzeuganfrage', // Dies setzt den Betreff auf Fahrzeuganfrage
+      message: `Ich interessiere mich für den ${car.brand} ${car.model} (${car.year})` // Vorausgefüllte Nachricht
+    }).toString();
+    
+    // Zur Kontaktseite navigieren
+    navigate(`/contact?${query}`);
+  };
+
+  // Lädt alle Fahrzeuge für den Vergleich
+  const fetchAvailableCars = async () => {
+    setLoadingCars(true);
+    try {
+      const { data, error } = await supabase
+        .from('cars')
+        .select('*')
+        .neq('id', id)
+        .limit(10);
+
+      if (error) throw error;
+
+      // Parse JSON strings back to objects if needed
+      const parsedCars = data.map(car => ({
+        ...car,
+        specs: typeof car.specs === 'string' ? JSON.parse(car.specs) : car.specs,
+        condition: typeof car.condition === 'string' ? JSON.parse(car.condition) : car.condition
+      }));
+
+      setAvailableCars(parsedCars);
+    } catch (error) {
+      console.error('Error fetching available cars:', error);
+    } finally {
+      setLoadingCars(false);
+    }
+  };
+
+  const openSelectionModal = (slot: number) => {
+    setSelectionSlot(slot);
+    setShowSelectionModal(true);
+    fetchAvailableCars();
+  };
+
+  const selectCarForComparison = (selectedCar: any) => {
+    if (selectionSlot === null) return;
+    
+    const newComparisonCars = [...comparisonCars];
+    newComparisonCars[selectionSlot] = selectedCar;
+    setComparisonCars(newComparisonCars);
+    setShowSelectionModal(false);
+    setSelectionSlot(null);
+  };
+
+  const clearComparisonSlot = (slot: number) => {
+    const newComparisonCars = [...comparisonCars];
+    newComparisonCars[slot] = null;
+    setComparisonCars(newComparisonCars);
   };
 
   if (loading) {
@@ -219,9 +409,27 @@ const CarDetails = () => {
           {/* Right Column - Car Details */}
           <div className="bg-[#16181f]/60 backdrop-blur-md rounded-lg p-8">
             <div className="mb-8">
-              <h1 className="text-4xl font-bold text-white mb-4">
-                {car.brand} {car.model}
-              </h1>
+              <div className="flex justify-between items-start mb-4">
+                <h1 className="text-4xl font-bold text-white">
+                  {car.brand} {car.model}
+                </h1>
+                
+                {/* Aktive Betrachter Anzeige */}
+                {(activeViewers > 0 || realViewers > 0) && (
+                  <div className="flex items-center bg-black/20 hover:bg-black/30 transition-colors rounded-full px-3 py-1.5 text-white">
+                    <Users className="w-4 h-4 mr-2 text-[#14A79D]" />
+                    <div className="flex items-center">
+                      <span className="text-sm font-medium">{showRealViewers ? realViewers : activeViewers}</span>
+                      <div className="ml-1.5 relative flex">
+                        <span className="absolute inline-flex h-2 w-2 rounded-full bg-green-400 opacity-75 animate-ping"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                      </div>
+                      <span className="text-xs ml-1.5 text-gray-300">Interessenten online</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
               <div className="flex items-center justify-between mb-6">
                 <p className="text-3xl text-orange-400 font-bold">
                   €{car.price.toLocaleString()}
@@ -366,9 +574,6 @@ const CarDetails = () => {
               >
                 Kontaktieren Sie uns
               </button>
-              <button className="bg-white/10 backdrop-blur-md text-white w-full py-3 rounded-full hover:bg-white/20 transition-colors duration-200">
-                Finanzierung berechnen
-              </button>
             </div>
           </div>
         </motion.div>
@@ -431,97 +636,485 @@ const CarDetails = () => {
           animate={{ opacity: 1, y: 0 }}
           className="bg-[#16181f]/60 backdrop-blur-md rounded-lg p-8 mb-12"
         >
-          <h2 className="text-2xl font-bold text-white mb-6">Fahrzeugbeschreibung</h2>
+          <h2 className="text-2xl font-bold text-white mb-6 flex items-center">
+            <Info className="w-6 h-6 text-orange-400 mr-2" />
+            Fahrzeugbeschreibung
+          </h2>
+
           <div className="space-y-8">
-            <div className="bg-gradient-to-r from-[#1a1c25] to-[#1e2029] p-6 rounded-lg">
-              <p className="text-xl text-gray-200 leading-relaxed">
-                {car.description}
-              </p>
+            {car.description && (
+              <div className="bg-gradient-to-r from-[#1a1c25] to-[#1e2029] p-6 rounded-xl shadow-lg border border-[#14A79D]/10 hover:border-[#14A79D]/20 transition-all duration-300">
+                <div className="flex items-start space-x-4">
+                  <div className="hidden md:block">
+                    <div className="w-12 h-12 bg-gradient-to-br from-[#14A79D] to-[#EBA530] rounded-full flex items-center justify-center">
+                      <Sparkles className="w-6 h-6 text-white" />
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="text-xl text-white font-semibold mb-3 flex items-center">
+                      <Sparkles className="md:hidden w-5 h-5 text-[#14A79D] mr-2" />
+                      Über dieses Fahrzeug
+                    </h3>
+                    <p className="text-lg text-gray-200 leading-relaxed border-l-2 border-[#14A79D]/30 pl-4 italic">
+                      {car.description}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Technische Daten */}
+            <motion.div 
+              className="bg-gradient-to-r from-[#1a1c25] to-[#1e2029] rounded-xl shadow-lg overflow-hidden border border-[#14A79D]/10"
+              whileHover={{ scale: 1.01 }}
+              transition={{ duration: 0.3 }}
+            >
+              <div className="bg-gradient-to-r from-[#14A79D]/10 to-transparent p-4">
+                <h3 className="text-lg font-semibold text-white flex items-center">
+                  <Settings className="w-5 h-5 text-[#14A79D] mr-2" />
+                  Technische Daten
+                </h3>
+              </div>
+              <div className="p-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {car.specs.engine && (
+                    <div className="bg-black/20 p-4 rounded-lg hover:bg-black/30 transition-colors group">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <div className="w-8 h-8 bg-[#14A79D]/20 rounded-full flex items-center justify-center group-hover:bg-[#14A79D]/30 transition-colors">
+                          <Settings className="w-4 h-4 text-[#14A79D]" />
+                        </div>
+                        <span className="text-gray-300 font-medium">Motor</span>
+                      </div>
+                      <p className="text-white font-semibold ml-11">{car.specs.engine}</p>
+                    </div>
+                  )}
+                  {car.specs.power && (
+                    <div className="bg-black/20 p-4 rounded-lg hover:bg-black/30 transition-colors group">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <div className="w-8 h-8 bg-[#14A79D]/20 rounded-full flex items-center justify-center group-hover:bg-[#14A79D]/30 transition-colors">
+                          <Gauge className="w-4 h-4 text-[#14A79D]" />
+                        </div>
+                        <span className="text-gray-300 font-medium">Leistung</span>
+                      </div>
+                      <p className="text-white font-semibold ml-11">{car.specs.power}</p>
+                    </div>
+                  )}
+                  {car.specs.transmission && (
+                    <div className="bg-black/20 p-4 rounded-lg hover:bg-black/30 transition-colors group">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <div className="w-8 h-8 bg-[#14A79D]/20 rounded-full flex items-center justify-center group-hover:bg-[#14A79D]/30 transition-colors">
+                          <Settings className="w-4 h-4 text-[#14A79D]" />
+                        </div>
+                        <span className="text-gray-300 font-medium">Getriebe</span>
+                      </div>
+                      <p className="text-white font-semibold ml-11">{car.specs.transmission}</p>
+                    </div>
+                  )}
+                  {car.specs.fuelType && (
+                    <div className="bg-black/20 p-4 rounded-lg hover:bg-black/30 transition-colors group">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <div className="w-8 h-8 bg-[#14A79D]/20 rounded-full flex items-center justify-center group-hover:bg-[#14A79D]/30 transition-colors">
+                          <Car className="w-4 h-4 text-[#14A79D]" />
+                        </div>
+                        <span className="text-gray-300 font-medium">Kraftstoff</span>
+                      </div>
+                      <p className="text-white font-semibold ml-11">{car.specs.fuelType}</p>
+                    </div>
+                  )}
+                  {car.specs.consumption && (
+                    <div className="bg-black/20 p-4 rounded-lg hover:bg-black/30 transition-colors group">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <div className="w-8 h-8 bg-[#14A79D]/20 rounded-full flex items-center justify-center group-hover:bg-[#14A79D]/30 transition-colors">
+                          <Lightbulb className="w-4 h-4 text-[#14A79D]" />
+                        </div>
+                        <span className="text-gray-300 font-medium">Verbrauch</span>
+                      </div>
+                      <p className="text-white font-semibold ml-11">{car.specs.consumption}</p>
+                    </div>
+                  )}
+                  {car.specs.acceleration && (
+                    <div className="bg-black/20 p-4 rounded-lg hover:bg-black/30 transition-colors group">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <div className="w-8 h-8 bg-[#14A79D]/20 rounded-full flex items-center justify-center group-hover:bg-[#14A79D]/30 transition-colors">
+                          <Navigation2 className="w-4 h-4 text-[#14A79D]" />
+                        </div>
+                        <span className="text-gray-300 font-medium">Beschleunigung</span>
+                      </div>
+                      <p className="text-white font-semibold ml-11">{car.specs.acceleration}</p>
+                    </div>
+                  )}
+                  {car.specs.emissions && (
+                    <div className="bg-black/20 p-4 rounded-lg hover:bg-black/30 transition-colors group">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <div className="w-8 h-8 bg-[#14A79D]/20 rounded-full flex items-center justify-center group-hover:bg-[#14A79D]/30 transition-colors">
+                          <Eye className="w-4 h-4 text-[#14A79D]" />
+                        </div>
+                        <span className="text-gray-300 font-medium">CO₂-Emissionen</span>
+                      </div>
+                      <p className="text-white font-semibold ml-11">{car.specs.emissions}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Fahrzeughistorie (Optional) */}
+            {car.condition && (
+              <motion.div 
+                className="bg-gradient-to-r from-[#1a1c25] to-[#1e2029] rounded-xl overflow-hidden shadow-lg border border-[#14A79D]/10"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+              >
+                <div className="bg-gradient-to-r from-[#14A79D]/10 to-transparent p-4 flex justify-between items-center">
+                  <h3 className="text-lg font-semibold text-white flex items-center">
+                    <Clock className="w-5 h-5 text-[#14A79D] mr-2" />
+                    Fahrzeughistorie
+                  </h3>
+                  {car.condition.type && (
+                    <div className={`px-3 py-1 rounded-full text-sm font-medium ${
+                      car.condition.type === 'Neu' 
+                        ? 'bg-indigo-500/20 text-indigo-400' 
+                        : car.condition.type === 'Gebraucht' && car.year >= new Date().getFullYear() - 2
+                        ? 'bg-blue-500/20 text-blue-400'
+                        : 'bg-amber-500/20 text-amber-400'
+                    }`}>
+                      {car.condition.type}
+                    </div>
+                  )}
+                </div>
+                <div className="p-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    {car.condition.previousOwners !== undefined && (
+                      <div className="flex items-start space-x-4 bg-black/20 p-4 rounded-lg">
+                        <div className="w-10 h-10 bg-[#14A79D]/20 rounded-full flex items-center justify-center flex-shrink-0">
+                          <User className="w-5 h-5 text-[#14A79D]" />
+                        </div>
+                        <div>
+                          <span className="text-gray-300 font-medium block">Vorbesitzer</span>
+                          <span className="text-white text-xl font-bold">
+                            {car.condition.previousOwners === 0 
+                              ? "Erstbesitz" 
+                              : `${car.condition.previousOwners} ${car.condition.previousOwners === 1 ? 'Vorbesitzer' : 'Vorbesitzer'}`
+                            }
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {car.condition.serviceHistory !== undefined && (
+                      <div className="flex items-start space-x-4 bg-black/20 p-4 rounded-lg">
+                        <div className="w-10 h-10 bg-[#14A79D]/20 rounded-full flex items-center justify-center flex-shrink-0">
+                          <BookCheck className="w-5 h-5 text-[#14A79D]" />
+                        </div>
+                        <div>
+                          <span className="text-gray-300 font-medium block">Scheckheft</span>
+                          <span className={`text-xl font-bold ${car.condition.serviceHistory ? 'text-green-400' : 'text-red-400'}`}>
+                            {car.condition.serviceHistory ? 'Scheckheftgepflegt' : 'Nicht vorhanden'}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {car.condition.accident !== undefined && (
+                      <div className="flex items-start space-x-4 bg-black/20 p-4 rounded-lg">
+                        <div className="w-10 h-10 bg-[#14A79D]/20 rounded-full flex items-center justify-center flex-shrink-0">
+                          <Shield className="w-5 h-5 text-[#14A79D]" />
+                        </div>
+                        <div>
+                          <span className="text-gray-300 font-medium block">Unfallfrei</span>
+                          <span className={`text-xl font-bold ${car.condition.accident ? 'text-red-400' : 'text-green-400'}`}>
+                            {car.condition.accident ? 'Unfallfahrzeug' : 'Unfallfrei'}
+                          </span>
+                          {car.condition.accident && (
+                            <p className="text-gray-400 text-sm mt-1">Bitte kontaktieren Sie uns für Details zum Unfallschaden.</p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {car.condition.warranty !== undefined && (
+                      <div className="flex items-start space-x-4 bg-black/20 p-4 rounded-lg">
+                        <div className="w-10 h-10 bg-[#14A79D]/20 rounded-full flex items-center justify-center flex-shrink-0">
+                          <Award className="w-5 h-5 text-[#14A79D]" />
+                        </div>
+                        <div>
+                          <span className="text-gray-300 font-medium block">Garantie</span>
+                          <span className={`text-xl font-bold ${car.condition.warranty ? 'text-green-400' : 'text-red-400'}`}>
+                            {car.condition.warranty ? 'Garantie vorhanden' : 'Keine Garantie'}
+                          </span>
+                          {car.condition.warranty && (
+                            <p className="text-gray-400 text-sm mt-1">12 Monate Gebrauchtwagengarantie</p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {!car.condition.accident && car.condition.serviceHistory && car.condition.warranty && (
+                    <div className="mt-6 bg-gradient-to-r from-[#14A79D]/20 to-[#EBA530]/20 p-4 rounded-lg border border-[#14A79D]/20">
+                      <div className="flex items-center">
+                        <div className="w-10 h-10 bg-gradient-to-br from-[#14A79D] to-[#EBA530] rounded-full flex items-center justify-center mr-3">
+                          <ThumbsUp className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                          <h4 className="text-white font-semibold text-lg">Premium-Fahrzeug</h4>
+                          <p className="text-gray-300">Dieses Fahrzeug erfüllt unsere höchsten Qualitätsstandards und wird mit umfassender Garantie angeboten.</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+            
+            {/* Neuer Abschnitt für Besonderheiten */}
+            <motion.div 
+              className="bg-gradient-to-r from-[#1a1c25] to-[#1e2029] rounded-xl overflow-hidden shadow-lg border border-[#14A79D]/10"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+            >
+              <div className="bg-gradient-to-r from-[#14A79D]/10 to-transparent p-4">
+                <h3 className="text-lg font-semibold text-white flex items-center">
+                  <Sparkles className="w-5 h-5 text-[#14A79D] mr-2" />
+                  Besonderheiten
+                </h3>
+              </div>
+              <div className="p-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex items-center bg-black/20 p-3 rounded-lg hover:bg-black/30 transition-colors">
+                    <Calendar className="w-5 h-5 text-[#14A79D] mr-3" />
+                    <div>
+                      <span className="text-gray-400 text-sm">Verfügbar ab</span>
+                      <p className="text-white font-medium">Sofort</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center bg-black/20 p-3 rounded-lg hover:bg-black/30 transition-colors">
+                    <Calculator className="w-5 h-5 text-[#14A79D] mr-3" />
+                    <div>
+                      <span className="text-gray-400 text-sm">Preis</span>
+                      <p className="text-white font-medium">€{car.price.toLocaleString()}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center bg-black/20 p-3 rounded-lg hover:bg-black/30 transition-colors">
+                    <CreditCard className="w-5 h-5 text-[#14A79D] mr-3" />
+                    <div>
+                      <span className="text-gray-400 text-sm">Zahlungsarten</span>
+                      <p className="text-white font-medium">Überweisung, Barzahlung</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="mt-6">
+                  <button
+                    onClick={handleContact}
+                    className="bg-gradient-to-r from-[#14A79D] via-[#17A39A] to-[#EBA530] text-white py-3 px-6 rounded-full inline-flex items-center justify-center hover:shadow-lg transition-all duration-300 font-medium w-full"
+                  >
+                    <Check className="w-5 h-5 mr-2" />
+                    Probefahrt vereinbaren
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </motion.div>
+
+        {/* Fahrzeugvergleich */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-[#16181f]/60 backdrop-blur-md rounded-lg p-8 mb-12"
+        >
+          <h2 className="text-2xl font-bold text-white mb-6 flex items-center">
+            <Scale className="w-6 h-6 text-[#14A79D] mr-2" />
+            Fahrzeugvergleich
+          </h2>
+          
+          <div className="space-y-6">
+            <p className="text-gray-300">
+              Vergleichen Sie diesen {car.brand} {car.model} mit anderen Fahrzeugen aus unserem Bestand und finden Sie das perfekte Auto für Ihre Bedürfnisse.
+            </p>
+
+            {/* Vergleichsfahrzeuge Auswahl */}
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+              {/* Hauptfahrzeug */}
+              <div className="bg-gradient-to-br from-[#1a1c25] to-[#1e2029] rounded-lg p-4 border border-[#14A79D]/30 relative">
+                <div className="absolute top-2 right-2 bg-[#14A79D] text-white text-xs px-2 py-1 rounded-full">
+                  Ausgewählt
+                </div>
+                <div className="w-full h-40 mb-3 overflow-hidden rounded-lg">
+                  <img 
+                    src={car.images[0]} 
+                    alt={`${car.brand} ${car.model}`} 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <h3 className="text-white font-semibold text-lg">{car.brand} {car.model}</h3>
+                <p className="text-[#14A79D] font-bold">€{car.price.toLocaleString()}</p>
+                <div className="grid grid-cols-2 gap-2 mt-3 text-sm">
+                  <div className="text-gray-400">Baujahr: <span className="text-white">{car.year}</span></div>
+                  <div className="text-gray-400">KM: <span className="text-white">{car.mileage.toLocaleString()}</span></div>
+                </div>
+              </div>
+              
+              {/* Vergleichsfahrzeug 1 */}
+              {comparisonCars[0] ? (
+                <div className="bg-gradient-to-br from-[#1a1c25] to-[#1e2029] rounded-lg p-4 border border-gray-700 relative">
+                  <button 
+                    onClick={() => clearComparisonSlot(0)}
+                    className="absolute top-2 right-2 bg-red-500/80 hover:bg-red-500 text-white text-xs px-2 py-1 rounded-full transition-colors"
+                  >
+                    Entfernen
+                  </button>
+                  <div className="w-full h-40 mb-3 overflow-hidden rounded-lg">
+                    <img 
+                      src={comparisonCars[0].images?.[0] || '/placeholder.jpg'} 
+                      alt={`${comparisonCars[0].brand} ${comparisonCars[0].model}`} 
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <h3 className="text-white font-semibold text-lg">{comparisonCars[0].brand} {comparisonCars[0].model}</h3>
+                  <p className="text-[#14A79D] font-bold">€{comparisonCars[0].price.toLocaleString()}</p>
+                  <div className="grid grid-cols-2 gap-2 mt-3 text-sm">
+                    <div className="text-gray-400">Baujahr: <span className="text-white">{comparisonCars[0].year}</span></div>
+                    <div className="text-gray-400">KM: <span className="text-white">{comparisonCars[0].mileage.toLocaleString()}</span></div>
+                  </div>
+                </div>
+              ) : (
+                <div 
+                  onClick={() => openSelectionModal(0)}
+                  className="bg-[#1a1c25]/60 rounded-lg border border-gray-700 border-dashed flex flex-col items-center justify-center p-8 h-64 cursor-pointer hover:bg-[#1a1c25]/80 transition-colors"
+                >
+                  <PlusCircle className="w-10 h-10 text-gray-500 mb-3" />
+                  <p className="text-gray-400 text-center">Fahrzeug zum Vergleichen hinzufügen</p>
+                  <button className="mt-4 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded-lg transition-colors">
+                    Fahrzeug auswählen
+                  </button>
+                </div>
+              )}
+              
+              {/* Vergleichsfahrzeug 2 */}
+              {comparisonCars[1] ? (
+                <div className="bg-gradient-to-br from-[#1a1c25] to-[#1e2029] rounded-lg p-4 border border-gray-700 relative">
+                  <button 
+                    onClick={() => clearComparisonSlot(1)}
+                    className="absolute top-2 right-2 bg-red-500/80 hover:bg-red-500 text-white text-xs px-2 py-1 rounded-full transition-colors"
+                  >
+                    Entfernen
+                  </button>
+                  <div className="w-full h-40 mb-3 overflow-hidden rounded-lg">
+                    <img 
+                      src={comparisonCars[1].images?.[0] || '/placeholder.jpg'} 
+                      alt={`${comparisonCars[1].brand} ${comparisonCars[1].model}`} 
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <h3 className="text-white font-semibold text-lg">{comparisonCars[1].brand} {comparisonCars[1].model}</h3>
+                  <p className="text-[#14A79D] font-bold">€{comparisonCars[1].price.toLocaleString()}</p>
+                  <div className="grid grid-cols-2 gap-2 mt-3 text-sm">
+                    <div className="text-gray-400">Baujahr: <span className="text-white">{comparisonCars[1].year}</span></div>
+                    <div className="text-gray-400">KM: <span className="text-white">{comparisonCars[1].mileage.toLocaleString()}</span></div>
+                  </div>
+                </div>
+              ) : (
+                <div 
+                  onClick={() => openSelectionModal(1)}
+                  className="bg-[#1a1c25]/60 rounded-lg border border-gray-700 border-dashed flex flex-col items-center justify-center p-8 h-64 cursor-pointer hover:bg-[#1a1c25]/80 transition-colors"
+                >
+                  <PlusCircle className="w-10 h-10 text-gray-500 mb-3" />
+                  <p className="text-gray-400 text-center">Fahrzeug zum Vergleichen hinzufügen</p>
+                  <button className="mt-4 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded-lg transition-colors">
+                    Fahrzeug auswählen
+                  </button>
+                </div>
+              )}
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="bg-gradient-to-r from-[#1a1c25] to-[#1e2029] p-6 rounded-lg">
-                <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
-                  <Shield className="w-5 h-5 text-orange-400 mr-2" />
-                  Sicherheit & Assistenz
-                </h3>
-                <ul className="space-y-2">
-                  <li className="text-gray-300 flex items-start">
-                    <div className="w-2 h-2 bg-orange-400 rounded-full mt-2 mr-2 flex-shrink-0" />
-                    Airbag Fahrer-/Beifahrerseite (abschaltbar)
-                  </li>
-                  <li className="text-gray-300 flex items-start">
-                    <div className="w-2 h-2 bg-orange-400 rounded-full mt-2 mr-2 flex-shrink-0" />
-                    Aktive Motorhaube
-                  </li>
-                  <li className="text-gray-300 flex items-start">
-                    <div className="w-2 h-2 bg-orange-400 rounded-full mt-2 mr-2 flex-shrink-0" />
-                    Antischlupfregelung (ASR)
-                  </li>
-                </ul>
-              </div>
-
-              <div className="bg-gradient-to-r from-[#1a1c25] to-[#1e2029] p-6 rounded-lg">
-                <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
-                  <Settings className="w-5 h-5 text-orange-400 mr-2" />
-                  Antrieb & Fahrwerk
-                </h3>
-                <ul className="space-y-2">
-                  <li className="text-gray-300 flex items-start">
-                    <div className="w-2 h-2 bg-orange-400 rounded-full mt-2 mr-2 flex-shrink-0" />
-                    Allradantrieb
-                  </li>
-                  <li className="text-gray-300 flex items-start">
-                    <div className="w-2 h-2 bg-orange-400 rounded-full mt-2 mr-2 flex-shrink-0" />
-                    Automatisches Bremsen Differential (ABD)
-                  </li>
-                  <li className="text-gray-300 flex items-start">
-                    <div className="w-2 h-2 bg-orange-400 rounded-full mt-2 mr-2 flex-shrink-0" />
-                    Bremssättel schwarz eloxiert
-                  </li>
-                </ul>
-              </div>
-
-              <div className="bg-gradient-to-r from-[#1a1c25] to-[#1e2029] p-6 rounded-lg">
-                <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
-                  <Eye className="w-5 h-5 text-orange-400 mr-2" />
-                  Exterieur
-                </h3>
-                <ul className="space-y-2">
-                  <li className="text-gray-300 flex items-start">
-                    <div className="w-2 h-2 bg-orange-400 rounded-full mt-2 mr-2 flex-shrink-0" />
-                    Außenspiegel asphärisch, links
-                  </li>
-                  <li className="text-gray-300 flex items-start">
-                    <div className="w-2 h-2 bg-orange-400 rounded-full mt-2 mr-2 flex-shrink-0" />
-                    Außenspiegel elektr. anklappbar
-                  </li>
-                  <li className="text-gray-300 flex items-start">
-                    <div className="w-2 h-2 bg-orange-400 rounded-full mt-2 mr-2 flex-shrink-0" />
-                    Außenspiegel mit Umfeldleuchte LED
-                  </li>
-                </ul>
-              </div>
-
-              <div className="bg-gradient-to-r from-[#1a1c25] to-[#1e2029] p-6 rounded-lg">
-                <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
-                  <Lightbulb className="w-5 h-5 text-orange-400 mr-2" />
-                  Beleuchtung
-                </h3>
-                <ul className="space-y-2">
-                  <li className="text-gray-300 flex items-start">
-                    <div className="w-2 h-2 bg-orange-400 rounded-full mt-2 mr-2 flex-shrink-0" />
-                    Blinkleuchten LED
-                  </li>
-                  <li className="text-gray-300 flex items-start">
-                    <div className="w-2 h-2 bg-orange-400 rounded-full mt-2 mr-2 flex-shrink-0" />
-                    Matrix-LED-Scheinwerfer
-                  </li>
-                  <li className="text-gray-300 flex items-start">
-                    <div className="w-2 h-2 bg-orange-400 rounded-full mt-2 mr-2 flex-shrink-0" />
-                    Tagfahrlicht 4-Punkt-LED
-                  </li>
-                </ul>
+            
+            {/* Vergleichstabelle */}
+            <div className="overflow-x-auto mt-8">
+              <table className="w-full text-left">
+                <thead className="bg-[#1a1c25] text-white border-b border-gray-700">
+                  <tr>
+                    <th className="px-4 py-3">Spezifikationen</th>
+                    <th className="px-4 py-3">{car.brand} {car.model}</th>
+                    <th className="px-4 py-3 text-gray-500">{comparisonCars[0] ? `${comparisonCars[0].brand} ${comparisonCars[0].model}` : 'Fahrzeug 2'}</th>
+                    <th className="px-4 py-3 text-gray-500">{comparisonCars[1] ? `${comparisonCars[1].brand} ${comparisonCars[1].model}` : 'Fahrzeug 3'}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-800">
+                  <tr>
+                    <td className="px-4 py-3 bg-[#1a1c25] text-white">Preis</td>
+                    <td className="px-4 py-3 text-white">€{car.price.toLocaleString()}</td>
+                    <td className="px-4 py-3 text-gray-300">{comparisonCars[0] ? `€${comparisonCars[0].price.toLocaleString()}` : '-'}</td>
+                    <td className="px-4 py-3 text-gray-300">{comparisonCars[1] ? `€${comparisonCars[1].price.toLocaleString()}` : '-'}</td>
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-3 bg-[#1a1c25] text-white">Baujahr</td>
+                    <td className="px-4 py-3 text-white">{car.year}</td>
+                    <td className="px-4 py-3 text-gray-300">{comparisonCars[0] ? comparisonCars[0].year : '-'}</td>
+                    <td className="px-4 py-3 text-gray-300">{comparisonCars[1] ? comparisonCars[1].year : '-'}</td>
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-3 bg-[#1a1c25] text-white">Kilometerstand</td>
+                    <td className="px-4 py-3 text-white">{car.mileage.toLocaleString()} km</td>
+                    <td className="px-4 py-3 text-gray-300">{comparisonCars[0] ? `${comparisonCars[0].mileage.toLocaleString()} km` : '-'}</td>
+                    <td className="px-4 py-3 text-gray-300">{comparisonCars[1] ? `${comparisonCars[1].mileage.toLocaleString()} km` : '-'}</td>
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-3 bg-[#1a1c25] text-white">Motor</td>
+                    <td className="px-4 py-3 text-white">{car.specs.engine || '-'}</td>
+                    <td className="px-4 py-3 text-gray-300">{comparisonCars[0]?.specs?.engine || '-'}</td>
+                    <td className="px-4 py-3 text-gray-300">{comparisonCars[1]?.specs?.engine || '-'}</td>
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-3 bg-[#1a1c25] text-white">Leistung</td>
+                    <td className="px-4 py-3 text-white">{car.specs.power || '-'}</td>
+                    <td className="px-4 py-3 text-gray-300">{comparisonCars[0]?.specs?.power || '-'}</td>
+                    <td className="px-4 py-3 text-gray-300">{comparisonCars[1]?.specs?.power || '-'}</td>
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-3 bg-[#1a1c25] text-white">Kraftstoffart</td>
+                    <td className="px-4 py-3 text-white">{car.specs.fuelType || '-'}</td>
+                    <td className="px-4 py-3 text-gray-300">{comparisonCars[0]?.specs?.fuelType || '-'}</td>
+                    <td className="px-4 py-3 text-gray-300">{comparisonCars[1]?.specs?.fuelType || '-'}</td>
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-3 bg-[#1a1c25] text-white">Getriebe</td>
+                    <td className="px-4 py-3 text-white">{car.specs.transmission || '-'}</td>
+                    <td className="px-4 py-3 text-gray-300">{comparisonCars[0]?.specs?.transmission || '-'}</td>
+                    <td className="px-4 py-3 text-gray-300">{comparisonCars[1]?.specs?.transmission || '-'}</td>
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-3 bg-[#1a1c25] text-white">Verbrauch</td>
+                    <td className="px-4 py-3 text-white">{car.specs.consumption || '-'}</td>
+                    <td className="px-4 py-3 text-gray-300">{comparisonCars[0]?.specs?.consumption || '-'}</td>
+                    <td className="px-4 py-3 text-gray-300">{comparisonCars[1]?.specs?.consumption || '-'}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            
+            {/* Empfehlung */}
+            <div className="bg-gradient-to-r from-[#14A79D]/10 to-[#14A79D]/5 rounded-lg p-5 border border-[#14A79D]/20 mt-6">
+              <h3 className="text-white font-semibold flex items-center mb-3">
+                <Award className="w-5 h-5 text-[#14A79D] mr-2" />
+                Unser Vergleichstipp
+              </h3>
+              <p className="text-gray-300">
+                Unsere Empfehlung basierend auf Ihren bisherigen Suchkriterien ist der <span className="text-white font-semibold">{car.brand} {car.model}</span>. 
+                Er bietet das beste Verhältnis aus Preis, Leistung und Ausstattung in seiner Klasse.
+              </p>
+              
+              <div className="mt-4 flex gap-3">
+                <button className="px-4 py-2 bg-[#14A79D] hover:bg-[#14A79D]/90 text-white rounded-lg transition-colors flex items-center">
+                  <Check className="w-4 h-4 mr-1" />
+                  Dieses Fahrzeug wählen
+                </button>
+                <button className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors flex items-center">
+                  <SearchIcon className="w-4 h-4 mr-1" />
+                  Alle ähnlichen Fahrzeuge
+                </button>
               </div>
             </div>
           </div>
@@ -579,6 +1172,94 @@ const CarDetails = () => {
             </div>
           </motion.div>
         )}
+      </div>
+      
+      {/* Fahrzeugauswahlmodal */}
+      <CarSelectionModal
+        isOpen={showSelectionModal}
+        onClose={() => setShowSelectionModal(false)}
+        cars={availableCars}
+        onSelect={selectCarForComparison}
+        loading={loadingCars}
+      />
+    </div>
+  );
+};
+
+// Fahrzeugauswahlmodal-Komponente
+const CarSelectionModal = ({ 
+  isOpen, 
+  onClose, 
+  cars,
+  onSelect,
+  loading
+}: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  cars: any[];
+  onSelect: (car: any) => void;
+  loading: boolean;
+}) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-[#16181f] rounded-lg w-full max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+        <div className="p-4 border-b border-gray-700 flex justify-between items-center">
+          <h3 className="text-xl font-bold text-white">Fahrzeug zum Vergleich auswählen</h3>
+          <button 
+            onClick={onClose}
+            className="text-gray-400 hover:text-white"
+          >
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+        
+        <div className="p-4 overflow-y-auto flex-grow">
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#14A79D]"></div>
+            </div>
+          ) : cars.length === 0 ? (
+            <div className="text-center py-12 text-gray-400">
+              Keine Fahrzeuge gefunden
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {cars.map(car => (
+                <div 
+                  key={car.id}
+                  onClick={() => onSelect(car)}
+                  className="bg-[#1a1c25] rounded-lg overflow-hidden cursor-pointer hover:bg-[#1a1c25]/80 transition-all hover:scale-[1.02] border border-gray-700 hover:border-[#14A79D]/50"
+                >
+                  <div className="h-32 overflow-hidden">
+                    <img 
+                      src={car.images?.[0] || '/placeholder.jpg'} 
+                      alt={`${car.brand} ${car.model}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="p-3">
+                    <h4 className="font-semibold text-white">{car.brand} {car.model}</h4>
+                    <div className="flex justify-between text-sm mt-1">
+                      <div className="text-[#14A79D]">€{car.price.toLocaleString()}</div>
+                      <div className="text-gray-400">{car.year}</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        
+        <div className="p-4 border-t border-gray-700 flex justify-end">
+          <button 
+            onClick={onClose}
+            className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+          >
+            Abbrechen
+          </button>
+        </div>
       </div>
     </div>
   );

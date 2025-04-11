@@ -1,25 +1,72 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Phone, Mail, MapPin, Clock, Car as CarIcon, Globe, Navigation2, Apple } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
-import { cars } from '../data/cars';
+import { supabase } from '../lib/supabase';
+import { Car } from '../data/cars';
 
 const Contact = () => {
   const location = useLocation();
   const carId = new URLSearchParams(location.search).get('carId');
-  const selectedCar = carId ? cars.find(car => car.id === carId) : null;
+  const [selectedCar, setSelectedCar] = useState<Car | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+
+  useEffect(() => {
+    const fetchCar = async () => {
+      if (!carId) return;
+      
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('cars')
+          .select('*')
+          .eq('id', carId)
+          .single();
+          
+        if (error) {
+          console.error('Error fetching car:', error);
+          return;
+        }
+          
+        const parsedCar = {
+          ...data,
+          specs: typeof data.specs === 'string' ? JSON.parse(data.specs) : data.specs,
+          condition: typeof data.condition === 'string' ? JSON.parse(data.condition) : data.condition,
+          additionalFeatures: data.additionalfeatures
+        };
+          
+        setSelectedCar(parsedCar);
+      } catch (error) {
+        console.error('Error fetching car:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchCar();
+  }, [carId]);
 
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
-    message: selectedCar ? `Ich interessiere mich für den ${selectedCar.brand} ${selectedCar.model} (${selectedCar.year})` : '',
+    message: '',
     preferredContact: 'email',
     preferredTime: '',
-    subject: selectedCar ? 'Fahrzeuganfrage' : 'Allgemeine Anfrage',
+    subject: carId ? 'Fahrzeuganfrage' : 'Allgemeine Anfrage',
     newsletter: false,
     privacy: false
   });
+
+  useEffect(() => {
+    if (selectedCar) {
+      setFormData(prevData => ({
+        ...prevData,
+        message: `Ich interessiere mich für den ${selectedCar.brand} ${selectedCar.model} (${selectedCar.year})`,
+        subject: 'Fahrzeuganfrage'
+      }));
+    }
+  }, [selectedCar]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -124,7 +171,11 @@ const Contact = () => {
               </div>
             </div>
 
-            {selectedCar && (
+            {loading ? (
+              <div className="bg-[#16181f]/60 backdrop-blur-md rounded-lg p-8 flex items-center justify-center">
+                <div className="text-white">Fahrzeugdaten werden geladen...</div>
+              </div>
+            ) : selectedCar && (
               <div className="bg-[#16181f]/60 backdrop-blur-md rounded-lg p-8">
                 <div className="flex items-center mb-4">
                   <CarIcon className="w-6 h-6 mr-3 text-orange-400" />

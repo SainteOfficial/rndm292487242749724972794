@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Search, Mail, Tag } from 'lucide-react';
+import { Search, Mail, Tag, Heart } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
+import { cn } from '../lib/utils';
 
 const Showroom = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -11,10 +12,19 @@ const Showroom = () => {
   const [priceRange, setPriceRange] = useState({ min: 0, max: 1000000 });
   const [cars, setCars] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [favorites, setFavorites] = useState<string[]>(() => {
+    const saved = localStorage.getItem('carFavorites');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
 
   useEffect(() => {
     fetchCars();
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem('carFavorites', JSON.stringify(favorites));
+  }, [favorites]);
 
   const fetchCars = async () => {
     try {
@@ -55,11 +65,26 @@ const Showroom = () => {
       );
       const matchesBrand = !selectedBrand || car.brand === selectedBrand;
       const matchesPrice = car.price >= priceRange.min && car.price <= priceRange.max;
+      const matchesFavorites = !showFavoritesOnly || favorites.includes(car.id);
       
-      return matchesSearch && matchesBrand && matchesPrice;
+      return matchesSearch && matchesBrand && matchesPrice && matchesFavorites;
     }),
-    [searchQuery, selectedBrand, priceRange, cars]
+    [searchQuery, selectedBrand, priceRange, cars, favorites, showFavoritesOnly]
   );
+
+  const toggleFavorite = useCallback((carId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    setFavorites(prev => {
+      if (prev.includes(carId)) {
+        return prev.filter(id => id !== carId);
+      } else {
+        toast.success('Fahrzeug zu Favoriten hinzugefügt');
+        return [...prev, carId];
+      }
+    });
+  }, []);
 
   if (loading) {
     return (
@@ -119,6 +144,19 @@ const Showroom = () => {
                 {brand}
               </button>
             ))}
+            
+            {/* Favorites Filter */}
+            <button
+              onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+              className={`px-4 py-2 rounded-full transition-colors flex items-center gap-2 ${
+                showFavoritesOnly 
+                  ? 'bg-orange-400 text-white' 
+                  : 'bg-[#16181f]/60 text-gray-300 hover:bg-[#16181f]/80'
+              }`}
+            >
+              <Heart className={`w-4 h-4 ${showFavoritesOnly ? 'fill-white' : ''}`} />
+              <span>{favorites.length} Favoriten</span>
+            </button>
           </div>
         </div>
 
@@ -163,6 +201,27 @@ const Showroom = () => {
                     Verkauft
                   </div>
                 )}
+
+                {/* Favorite Button */}
+                <button
+                  onClick={(e) => toggleFavorite(car.id, e)}
+                  className={cn(
+                    "absolute top-4 left-4 w-10 h-10 flex items-center justify-center rounded-full backdrop-blur-sm transition-all duration-300 hover:scale-110 shadow-lg",
+                    favorites.includes(car.id) 
+                      ? "bg-orange-400" 
+                      : "bg-black/30 hover:bg-black/60"
+                  )}
+                  style={{ display: car.status === 'sold' ? 'none' : 'flex' }}
+                >
+                  <Heart 
+                    className={cn(
+                      "w-5 h-5", 
+                      favorites.includes(car.id) 
+                        ? "fill-white text-white" 
+                        : "text-white"
+                    )} 
+                  />
+                </button>
               </div>
 
               <div className="p-6">
@@ -268,6 +327,26 @@ const Showroom = () => {
                   >
                     <Mail className={`w-5 h-5 ${car.status === 'sold' ? '' : 'group-hover:scale-110 transition-transform'}`} />
                   </Link>
+                  {!car.status || car.status !== 'sold' ? (
+                    <button
+                      onClick={(e) => toggleFavorite(car.id, e)}
+                      className={cn(
+                        "w-12 h-12 rounded-full transition-all duration-300 inline-flex items-center justify-center",
+                        favorites.includes(car.id) 
+                          ? "bg-orange-400" 
+                          : "bg-white/10 backdrop-blur-md hover:bg-white/20"
+                      )}
+                    >
+                      <Heart 
+                        className={cn(
+                          "w-5 h-5", 
+                          favorites.includes(car.id) 
+                            ? "fill-white text-white" 
+                            : "text-white group-hover:scale-110 transition-transform"
+                        )} 
+                      />
+                    </button>
+                  ) : null}
                 </div>
               </div>
             </motion.div>

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
@@ -30,10 +30,8 @@ import {
   BookCheck,
   Award,
   Heart,
-  File,
-  Activity,
-  Eye,
-  CheckCircle
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ImageUpload from '../components/ImageUpload';
@@ -124,69 +122,70 @@ const Admin = () => {
 
   const handleSave = async (car: any) => {
     try {
-      // Validiere die wichtigsten Felder
-      if (!car.brand || !car.model) {
-        toast.error('Marke und Modell sind Pflichtfelder');
-        return;
+      // Entferne die ID, wenn es ein neues Auto ist, damit Supabase eine neue ID generiert
+      const carData = { ...car };
+      if (!carData.id) {
+        delete carData.id;
       }
       
-      if (car.price <= 0) {
-        toast.error('Bitte geben Sie einen gültigen Preis ein');
-        return;
+      // Stellen Sie sicher, dass additionalFeatures ein Array ist
+      if (!Array.isArray(carData.additionalFeatures)) {
+        carData.additionalFeatures = [];
+      }
+      
+      // Stellen Sie sicher, dass features ein Array ist
+      if (!Array.isArray(carData.features)) {
+        carData.features = [];
+      }
+      
+      // Stellen Sie sicher, dass specs ein Objekt ist
+      if (!carData.specs || typeof carData.specs !== 'object') {
+        carData.specs = {};
+      }
+      
+      // Stellen Sie sicher, dass condition ein Objekt ist
+      if (!carData.condition || typeof carData.condition !== 'object') {
+        carData.condition = {};
       }
 
-      // Prüfe, ob mindestens ein Bild vorhanden ist
-      if (!car.images || car.images.length === 0) {
-        toast.info('Das Fahrzeug hat keine Bilder. Fahrzeuge mit Bildern werden besser wahrgenommen.');
+      // Bilder-Array sicherstellen
+      if (!Array.isArray(carData.images)) {
+        carData.images = [];
       }
-
+      
       // Create a copy of the car object with the correct field name
       const carToSave = {
-        ...car,
-        additionalfeatures: car.additionalFeatures, // Map to the correct field name
-        specs: JSON.stringify(car.specs),
-        condition: JSON.stringify(car.condition)
+        ...carData,
+        additionalfeatures: carData.additionalFeatures, // Map to the correct field name
+        specs: JSON.stringify(carData.specs),
+        condition: JSON.stringify(carData.condition)
       };
 
       // Remove the original additionalFeatures field
       delete carToSave.additionalFeatures;
-      
-      // Sicherstellen, dass bei neuen Autos keine ID gesendet wird
-      const isNewCar = !car.id;
-      if (isNewCar) {
-        delete carToSave.id;
-      }
 
-      // Zeige Ladetoast an
-      const toastId = toast.loading(isNewCar ? 'Fahrzeug wird erstellt...' : 'Fahrzeug wird aktualisiert...');
+      console.log('Speichere Fahrzeug:', carToSave);
 
       const { data, error } = await supabase
         .from('cars')
-        .upsert(carToSave)
-        .select();
+        .upsert(carToSave);
 
-      if (error) throw error;
-
-      // Schließe Ladetoast
-      toast.dismiss(toastId);
-
-      // Erfolgstoast mit mehr Details
-      if (isNewCar) {
-        toast.success(`Fahrzeug "${car.brand} ${car.model}" erfolgreich erstellt`);
-      } else {
-        toast.success(`Fahrzeug "${car.brand} ${car.model}" erfolgreich aktualisiert`);
+      if (error) {
+        console.error('Supabase error details:', error);
+        throw error;
       }
 
+      toast.success('Fahrzeug erfolgreich gespeichert');
       setEditingCar(null);
       fetchCars();
     } catch (error) {
       console.error('Error saving car:', error);
-      toast.error(`Fehler beim Speichern des Fahrzeugs: ${error.message || 'Unbekannter Fehler'}`);
+      toast.error('Fehler beim Speichern des Fahrzeugs');
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Sind Sie sicher, dass Sie dieses Fahrzeug löschen möchten?')) return;
+    if (!window.confirm('Sind Sie sicher, dass Sie dieses Fahrzeug lÃ¶schen mÃ¶chten?')) return;
 
     try {
       const { error } = await supabase
@@ -196,11 +195,11 @@ const Admin = () => {
 
       if (error) throw error;
 
-      toast.success('Fahrzeug erfolgreich gelöscht');
+      toast.success('Fahrzeug erfolgreich gelÃ¶scht');
       fetchCars();
     } catch (error) {
       console.error('Error deleting car:', error);
-      toast.error('Fehler beim Löschen des Fahrzeugs');
+      toast.error('Fehler beim LÃ¶schen des Fahrzeugs');
     }
   };
 
@@ -214,67 +213,12 @@ const Admin = () => {
 
       if (error) throw error;
 
-      toast.success(`Fahrzeug als ${newStatus === 'available' ? 'verfügbar' : 'verkauft'} markiert`);
+      toast.success(`Fahrzeug als ${newStatus === 'available' ? 'verfÃ¼gbar' : 'verkauft'} markiert`);
       fetchCars();
     } catch (error) {
       console.error('Error updating car status:', error);
       toast.error('Fehler beim Aktualisieren des Status');
     }
-  };
-
-  // Funktion, um ein neues Auto hinzuzufügen mit verbesserter Initialisierung und Validierung
-  const addNewCar = () => {
-    // Erstelle ein neues leeres Auto-Objekt mit Standardwerten
-    const newCar = {
-      brand: '',
-      model: '',
-      year: new Date().getFullYear(),
-      price: 0,
-      mileage: 0,
-      status: 'available',
-      description: '',
-      features: [],
-      images: [],
-      additionalFeatures: [],
-      specs: {
-        engine: '',
-        transmission: '',
-        power: '',
-        fuelType: '',
-        consumption: '',
-        acceleration: '',
-        topSpeed: '',
-        drive: '',
-        seats: '',
-        doors: '',
-        emissionClass: '',
-        environmentBadge: '',
-        inspection: '',
-        color: '',
-        interiorColor: '',
-        cylinders: '',
-        tankVolume: ''
-      },
-      condition: {
-        exterior: '',
-        interior: '',
-        technique: '',
-        tires: '',
-        accident: 'Nein',
-        warranty: false,
-        serviceHistory: false,
-        previousOwners: 0,
-        type: 'Gebraucht'
-      }
-    };
-
-    // Setze das Bearbeitungsobjekt und aktiviere den Bearbeitungsmodus
-    setEditingCar(newCar);
-    setIsAddingCar(true);
-    setActiveTab('basic');
-    
-    // Zeige einen Toast an, um zu bestätigen, dass ein neues Auto erstellt wird
-    toast.info('Neues Fahrzeug wird erstellt. Bitte füllen Sie alle erforderlichen Felder aus.');
   };
 
   const updateCarField = (field: string, value: any) => {
@@ -314,7 +258,7 @@ const Admin = () => {
         .from('gallery')
         .select('*, cars(brand, model, id)');
       
-      // Kategorie-Filter anwenden, wenn ausgewählt
+      // Kategorie-Filter anwenden, wenn ausgewÃ¤hlt
       if (filterCategory) {
         query = query.eq('category', filterCategory);
       }
@@ -324,12 +268,12 @@ const Admin = () => {
         ascending: gallerySort.direction === 'asc' 
       });
       
-      // Query ausführen
+      // Query ausfÃ¼hren
       const { data, error } = await query;
       
       if (error) throw error;
       
-      // Daten verarbeiten und Autos verknüpfen
+      // Daten verarbeiten und Autos verknÃ¼pfen
       const processedData = data?.map(img => {
         return {
           ...img,
@@ -376,7 +320,7 @@ const Admin = () => {
         category: selectedCategory || 'Sonstiges'
       };
 
-      // Wenn ein Auto ausgewählt ist, füge die Auto-Info hinzu
+      // Wenn ein Auto ausgewÃ¤hlt ist, fÃ¼ge die Auto-Info hinzu
       if (selectedCarForGallery) {
         galleryEntry.car_id = selectedCarForGallery.id;
         galleryEntry.car_brand = selectedCarForGallery.brand;
@@ -404,10 +348,10 @@ const Admin = () => {
 
   // Function to delete gallery image
   const deleteGalleryImage = async (id: string) => {
-    if (!confirm('Möchten Sie dieses Bild wirklich löschen?')) return;
+    if (!confirm('MÃ¶chten Sie dieses Bild wirklich lÃ¶schen?')) return;
     
     try {
-      const toastId = toast.loading('Bild wird gelöscht...');
+      const toastId = toast.loading('Bild wird gelÃ¶scht...');
       
       // Get the image URL first to extract the file path
       const { data } = await supabase
@@ -437,11 +381,11 @@ const Admin = () => {
       }
       
       // Success
-      toast.success('Bild erfolgreich gelöscht', { id: toastId });
+      toast.success('Bild erfolgreich gelÃ¶scht', { id: toastId });
       fetchGalleryImages();
     } catch (error) {
       console.error('Error deleting gallery image:', error);
-      toast.error('Fehler beim Löschen des Bildes');
+      toast.error('Fehler beim LÃ¶schen des Bildes');
     }
   };
 
@@ -449,12 +393,12 @@ const Admin = () => {
   const deleteMultipleGalleryImages = async () => {
     if (selectedImages.length === 0) return;
     
-    if (!confirm(`Möchten Sie ${selectedImages.length} Bilder wirklich löschen?`)) return;
+    if (!confirm(`MÃ¶chten Sie ${selectedImages.length} Bilder wirklich lÃ¶schen?`)) return;
     
     try {
-      const toastId = toast.loading(`Lösche ${selectedImages.length} Bilder...`);
+      const toastId = toast.loading(`LÃ¶sche ${selectedImages.length} Bilder...`);
       
-      // Sammle alle URLs für die Speicherlöschung
+      // Sammle alle URLs fÃ¼r die SpeicherlÃ¶schung
       const { data: galleryData } = await supabase
         .from('gallery')
         .select('url, id')
@@ -462,7 +406,7 @@ const Admin = () => {
       
       if (!galleryData) throw new Error('Keine Bilddaten gefunden');
       
-      // Lösche aus der Datenbank
+      // LÃ¶sche aus der Datenbank
       const { error: dbError } = await supabase
         .from('gallery')
         .delete()
@@ -470,7 +414,7 @@ const Admin = () => {
         
       if (dbError) throw dbError;
       
-      // Lösche aus dem Storage
+      // LÃ¶sche aus dem Storage
       const filePaths = galleryData.map(item => {
         const urlParts = item.url.split('/');
         const fileName = urlParts[urlParts.length - 1];
@@ -484,7 +428,7 @@ const Admin = () => {
       }
       
       // Success
-      toast.success(`${selectedImages.length} Bilder erfolgreich gelöscht`, { id: toastId });
+      toast.success(`${selectedImages.length} Bilder erfolgreich gelÃ¶scht`, { id: toastId });
       
       // Reset selection
       setSelectedImages([]);
@@ -494,7 +438,7 @@ const Admin = () => {
       fetchGalleryImages();
     } catch (error) {
       console.error('Error deleting gallery images:', error);
-      toast.error('Fehler beim Löschen der Bilder');
+      toast.error('Fehler beim LÃ¶schen der Bilder');
     }
   };
   
@@ -505,16 +449,6 @@ const Admin = () => {
     } else {
       setSelectedImages(prev => [...prev, id]);
     }
-  };
-
-  const hasRequiredBasicFields = () => {
-    return editingCar.brand && editingCar.model && editingCar.year && editingCar.price && editingCar.mileage && editingCar.status;
-  };
-
-  const calculateCompletionPercentage = () => {
-    const requiredFields = ['brand', 'model', 'year', 'price', 'mileage', 'status'];
-    const filledFields = requiredFields.filter(field => editingCar[field]);
-    return Math.round((filledFields.length / requiredFields.length) * 100);
   };
 
   if (loading) {
@@ -572,7 +506,52 @@ const Admin = () => {
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-white">Fahrzeuge verwalten</h2>
               <button
-                onClick={() => addNewCar()}
+                onClick={() => {
+                  setIsAddingCar(true);
+                  setEditingCar({
+                    id: null,
+                    brand: '',
+                    model: '',
+                    year: new Date().getFullYear(),
+                    price: 0,
+                    mileage: 0,
+                    status: 'available',
+                    description: '',
+                    features: [],
+                    images: [],
+                    additionalFeatures: [],
+                    specs: {
+                      engine: '',
+                      transmission: '',
+                      power: '',
+                      fuelType: '',
+                      consumption: '',
+                      acceleration: '',
+                      topSpeed: '',
+                      drive: '',
+                      seats: '',
+                      doors: '',
+                      emissionClass: '',
+                      environmentBadge: '',
+                      inspection: '',
+                      color: '',
+                      interiorColor: '',
+                      cylinders: '',
+                      tankVolume: ''
+                    },
+                    condition: {
+                      exterior: '',
+                      interior: '',
+                      technique: '',
+                      tires: '',
+                      accident: false,
+                      warranty: false,
+                      serviceHistory: false,
+                      previousOwners: 0,
+                      type: 'Gebraucht'
+                    }
+                  });
+                }}
                 className="bg-[#14A79D] hover:bg-[#14A79D]/80 text-white px-4 py-2 rounded-md transition-colors flex items-center gap-2"
               >
                 <Plus size={18} />
@@ -600,7 +579,7 @@ const Admin = () => {
                         {car.brand} {car.model}
                       </h3>
                       <p className="text-gray-300 text-sm">
-                        {car.year} • {car.mileage.toLocaleString()} km
+                        {car.year} â€¢ {car.mileage.toLocaleString()} km
                       </p>
                     </div>
                     
@@ -610,13 +589,13 @@ const Admin = () => {
                         ? 'bg-green-500/20 text-green-400 border border-green-500/30'
                         : 'bg-red-500/20 text-red-400 border border-red-500/30'
                     }`}>
-                      {car.status === 'available' ? 'Verfügbar' : 'Verkauft'}
+                      {car.status === 'available' ? 'VerfÃ¼gbar' : 'Verkauft'}
                     </div>
                   </div>
 
                   <div className="p-4">
                     <p className="text-[#14A79D] font-semibold text-lg mb-4">
-                      €{car.price.toLocaleString()}
+                      â‚¬{car.price.toLocaleString()}
                     </p>
 
                     <div className="flex flex-col gap-4">
@@ -629,7 +608,7 @@ const Admin = () => {
                             : 'bg-red-500/10 text-red-400 hover:bg-red-500/20'
                         }`}
                       >
-                        <span>Status: {car.status === 'available' ? 'Verfügbar' : 'Verkauft'}</span>
+                        <span>Status: {car.status === 'available' ? 'VerfÃ¼gbar' : 'Verkauft'}</span>
                         <Toggle className="w-5 h-5" />
                       </button>
 
@@ -690,7 +669,7 @@ const Admin = () => {
                   }`}
                 >
                   <CheckSquare className="w-4 h-4" />
-                  <span>Auswählen</span>
+                  <span>AuswÃ¤hlen</span>
                 </button>
                 
                 <button
@@ -703,7 +682,7 @@ const Admin = () => {
                   }`}
                 >
                   <Trash className="w-4 h-4" /> 
-                  <span>{selectedImages.length > 0 ? `Löschen (${selectedImages.length})` : 'Löschen'}</span>
+                  <span>{selectedImages.length > 0 ? `LÃ¶schen (${selectedImages.length})` : 'LÃ¶schen'}</span>
                 </button>
               </div>
             </div>
@@ -716,14 +695,14 @@ const Admin = () => {
               </div>
               
               <div className="bg-gradient-to-r from-[#1a1c25] to-[#1a1c25]/90 rounded-lg p-4 border border-[#14A79D]/20">
-                <h3 className="text-gray-400 text-sm mb-2">Mit Fahrzeugen verknüpft</h3>
+                <h3 className="text-gray-400 text-sm mb-2">Mit Fahrzeugen verknÃ¼pft</h3>
                 <p className="text-white text-2xl font-bold">
                   {galleryImages.filter(img => img.car_id).length}
                 </p>
               </div>
               
               <div className="bg-gradient-to-r from-[#1a1c25] to-[#1a1c25]/90 rounded-lg p-4 border border-[#14A79D]/20">
-                <h3 className="text-gray-400 text-sm mb-2">Häufigste Kategorie</h3>
+                <h3 className="text-gray-400 text-sm mb-2">HÃ¤ufigste Kategorie</h3>
                 <p className="text-white text-2xl font-bold">
                   {galleryImages.length > 0 ? 
                     Object.entries(
@@ -748,14 +727,14 @@ const Admin = () => {
                 <div className="space-y-6">
                 <div className="space-y-4">
                   <div>
-                      <label className="block text-gray-300 mb-2 font-medium">Kategorie auswählen</label>
+                      <label className="block text-gray-300 mb-2 font-medium">Kategorie auswÃ¤hlen</label>
                       <div className="relative">
                     <select
                       value={selectedCategory}
                       onChange={(e) => setSelectedCategory(e.target.value)}
                           className="w-full bg-[#1a1c25] text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#14A79D] transition-all border border-gray-700 hover:border-[#14A79D]/50 appearance-none"
                     >
-                          <option value="">Bitte Kategorie auswählen</option>
+                          <option value="">Bitte Kategorie auswÃ¤hlen</option>
                       {categories.map((category) => (
                         <option key={category} value={category}>
                           {category}
@@ -768,7 +747,7 @@ const Admin = () => {
                       </div>
                       
                       {!selectedCategory && (
-                        <p className="text-gray-500 text-xs mt-1.5">Diese Information ist erforderlich für die Organisation</p>
+                        <p className="text-gray-500 text-xs mt-1.5">Diese Information ist erforderlich fÃ¼r die Organisation</p>
                       )}
                   </div>
                   
@@ -796,26 +775,26 @@ const Admin = () => {
                 </div>
                       <p className="text-gray-500 text-xs mt-1.5">
                         {selectedCarForGallery 
-                          ? `Bilder werden mit ${selectedCarForGallery.brand} ${selectedCarForGallery.model} verknüpft` 
+                          ? `Bilder werden mit ${selectedCarForGallery.brand} ${selectedCarForGallery.model} verknÃ¼pft` 
                           : "Bilder werden keinem spezifischen Fahrzeug zugeordnet"}
                       </p>
                     </div>
                   </div>
                   
-                  {/* Übersicht und Tipps */}
+                  {/* Ãœbersicht und Tipps */}
                   <div className="bg-gradient-to-r from-[#14A79D]/10 to-[#14A79D]/5 rounded-lg p-5 border border-[#14A79D]/20">
                     <h4 className="font-medium text-[#14A79D] mb-3 flex items-center">
                       <Info className="w-4 h-4 mr-2" />
-                      Tipps für optimale Bilder
+                      Tipps fÃ¼r optimale Bilder
                     </h4>
                     <ul className="text-gray-300 text-sm space-y-2.5">
                       <li className="flex items-start">
                         <Check className="w-4 h-4 text-[#14A79D] mr-2 mt-0.5 flex-shrink-0" /> 
-                        <span>Verwende Bilder mit hoher Auflösung für beste Qualität</span>
+                        <span>Verwende Bilder mit hoher AuflÃ¶sung fÃ¼r beste QualitÃ¤t</span>
                       </li>
                       <li className="flex items-start">
                         <Check className="w-4 h-4 text-[#14A79D] mr-2 mt-0.5 flex-shrink-0" /> 
-                        <span>Wähle eine passende Kategorie für einfachere Navigation</span>
+                        <span>WÃ¤hle eine passende Kategorie fÃ¼r einfachere Navigation</span>
                       </li>
                       <li className="flex items-start">
                         <Check className="w-4 h-4 text-[#14A79D] mr-2 mt-0.5 flex-shrink-0" /> 
@@ -823,14 +802,14 @@ const Admin = () => {
                       </li>
                       <li className="flex items-start">
                         <Check className="w-4 h-4 text-[#14A79D] mr-2 mt-0.5 flex-shrink-0" /> 
-                        <span>Ordne Bilder, wenn möglich, einem Fahrzeug zu für bessere Organisation</span>
+                        <span>Ordne Bilder, wenn mÃ¶glich, einem Fahrzeug zu fÃ¼r bessere Organisation</span>
                       </li>
                     </ul>
                     
                     <div className="mt-4 pt-4 border-t border-[#14A79D]/20">
                       <div className="flex items-center text-sm text-[#14A79D]">
                         <FileCheck className="w-4 h-4 mr-2" />
-                        <span>Unterstützte Formate: JPG, PNG, WebP</span>
+                        <span>UnterstÃ¼tzte Formate: JPG, PNG, WebP</span>
                       </div>
                   </div>
                 </div>
@@ -852,13 +831,13 @@ const Admin = () => {
                         <AlertTriangle className="w-8 h-8 text-amber-400 mx-auto mb-2" />
                         <h4 className="text-white font-medium text-lg mb-2">Kategorie erforderlich</h4>
                         <p className="text-gray-400 text-sm mb-4">
-                          Bitte wählen Sie eine Kategorie aus, bevor Sie Bilder hochladen.
+                          Bitte wÃ¤hlen Sie eine Kategorie aus, bevor Sie Bilder hochladen.
                         </p>
                 <button
                           onClick={() => document.querySelector('select')?.focus()}
                           className="bg-[#14A79D] hover:bg-[#14A79D]/90 text-white px-4 py-2 rounded-md transition-colors text-sm"
                         >
-                          Kategorie auswählen
+                          Kategorie auswÃ¤hlen
                 </button>
                       </div>
                     </div>
@@ -910,7 +889,7 @@ const Admin = () => {
                   className="bg-[#1a1c25] text-white py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-[#14A79D] border border-gray-700"
                   >
                     <option value="created_at_desc">Neueste zuerst</option>
-                    <option value="created_at_asc">Älteste zuerst</option>
+                    <option value="created_at_asc">Ã„lteste zuerst</option>
                     <option value="category_asc">Kategorie (A-Z)</option>
                     <option value="category_desc">Kategorie (Z-A)</option>
                   </select>
@@ -966,7 +945,7 @@ const Admin = () => {
                           ? 'bg-red-500 text-white hover:bg-red-600'
                         : 'bg-[#1a1c25] text-gray-500 cursor-not-allowed'
                       }`}
-                    title="Ausgewählte Bilder löschen"
+                    title="AusgewÃ¤hlte Bilder lÃ¶schen"
                     >
                     <Trash className="w-5 h-5 mr-1" /> 
                     {selectedImages.length > 0 && selectedImages.length}
@@ -1186,7 +1165,7 @@ const Admin = () => {
                                 className="px-3 py-1.5 inline-flex items-center text-red-300 hover:text-white bg-red-900/30 hover:bg-red-700/80 rounded transition-colors ml-1"
                               >
                                 <Trash2 className="w-3.5 h-3.5 mr-1.5" />
-                                Löschen
+                                LÃ¶schen
                             </button>
                           </td>
                           )}
@@ -1223,9 +1202,6 @@ const Admin = () => {
                   </h3>
                   <button
                     onClick={() => {
-                      if (isAddingCar && !window.confirm('Sind Sie sicher? Ungespeicherte Änderungen gehen verloren.')) {
-                        return;
-                      }
                       setEditingCar(null);
                       setIsAddingCar(false);
                     }}
@@ -1234,425 +1210,474 @@ const Admin = () => {
                     <X className="w-6 h-6" />
                   </button>
                 </div>
-
-                {/* Fortschrittsanzeige für Datenerfassung */}
-                {isAddingCar && (
-                  <div className="mt-4 mb-2">
-                    <div className="text-sm text-gray-400 mb-1 flex justify-between">
-                      <span>Datenerfassung</span>
-                      <span className="text-right">
-                        {calculateCompletionPercentage()}% abgeschlossen
-                      </span>
-                    </div>
-                    <div className="w-full bg-gray-700 rounded-full h-2.5">
-                      <div 
-                        className="bg-gradient-to-r from-[#14A79D] to-orange-400 h-2.5 rounded-full transition-all duration-500 ease-out" 
-                        style={{ width: `${calculateCompletionPercentage()}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Edit/Preview Mode Toggle */}
-                <div className="flex gap-4 mt-6 flex-wrap">
-                  <button
-                    onClick={() => setActiveTab('basic')}
-                    className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${
-                      activeTab === 'basic'
-                        ? 'bg-[#14A79D] text-white'
-                        : 'text-gray-400 hover:text-white hover:bg-gray-800'
-                    }`}
-                  >
-                    <File className="w-4 h-4" />
-                    Basis
-                    {!hasRequiredBasicFields() && <span className="w-2 h-2 bg-red-500 rounded-full"></span>}
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('specs')}
-                    className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${
-                      activeTab === 'specs'
-                        ? 'bg-[#14A79D] text-white'
-                        : 'text-gray-400 hover:text-white hover:bg-gray-800'
-                    }`}
-                  >
-                    <Settings className="w-4 h-4" />
-                    Spezifikationen
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('features')}
-                    className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${
-                      activeTab === 'features'
-                        ? 'bg-[#14A79D] text-white'
-                        : 'text-gray-400 hover:text-white hover:bg-gray-800'
-                    }`}
-                  >
-                    <List className="w-4 h-4" />
-                    Ausstattung
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('condition')}
-                    className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${
-                      activeTab === 'condition'
-                        ? 'bg-[#14A79D] text-white'
-                        : 'text-gray-400 hover:text-white hover:bg-gray-800'
-                    }`}
-                  >
-                    <Activity className="w-4 h-4" />
-                    Zustand
-                  </button>
-                  <button
-                    onClick={() => {
-                      // Prüfen ob alle Pflichtfelder ausgefüllt sind, sonst Warnung anzeigen
-                      if (!hasRequiredBasicFields()) {
-                        toast.error('Bitte füllen Sie erst alle Pflichtfelder aus');
-                        setActiveTab('basic');
-                        return;
-                      }
-                      setActiveTab('preview');
-                    }}
-                    className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ml-auto ${
-                      activeTab === 'preview'
-                        ? 'bg-orange-400 text-white'
-                        : 'text-gray-400 hover:text-white hover:bg-gray-800'
-                    }`}
-                  >
-                    <Eye className="w-4 h-4" />
-                    Vorschau
-                  </button>
                 </div>
-              </div>
 
-              {activeTab !== 'preview' ? (
-              <div className="p-6 space-y-6">
-                  {/* Existing Tabs Content */}
-                {activeTab === 'basic' && (
-                  <>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <label className="block text-gray-300 mb-2 flex items-center">
-                          Marke <span className="text-red-500 ml-1">*</span>
-                          {editingCar.brand ? (
-                            <CheckCircle className="w-4 h-4 text-green-500 ml-2" />
+              {/* Car Details Style Layout */}
+              <div className="p-6">
+                <div className="min-h-[800px] px-4">
+                  <div className="max-w-7xl mx-auto">
+                    <div className="flex items-center mb-6">
+                      <input
+                        type="checkbox"
+                        checked={editingCar.condition?.accident || false}
+                        onChange={(e) => updateConditionField('accident', e.target.checked)}
+                        className="mr-2 h-4 w-4"
+                        id="accident-checkbox"
+                      />
+                      <label htmlFor="accident-checkbox" className="text-white">Unfallfahrzeug</label>
+                    </div>
+
+                    {editingCar.condition?.accident && (
+                      <div className="mb-8 bg-red-500/10 border border-red-500/20 rounded-lg p-4 flex items-center">
+                        <AlertTriangle className="w-6 h-6 text-red-500 mr-3" />
+                        <div>
+                          <h3 className="text-red-500 font-semibold mb-1">Unfallfahrzeug</h3>
+                          <p className="text-gray-300">Dieses Fahrzeug hat einen dokumentierten Unfallschaden. Weitere Details finden Sie in der Fahrzeugbeschreibung.</p>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+                      {/* Left Column - Images */}
+                      <div className="space-y-4">
+                        <div className="bg-[#16181f]/60 backdrop-blur-md rounded-lg overflow-hidden relative group h-[400px] flex items-center justify-center">
+                          {editingCar.images && editingCar.images.length > 0 ? (
+                            <img
+                              src={editingCar.images[0]}
+                              alt={`${editingCar.brand || 'Neues'} ${editingCar.model || 'Fahrzeug'}`}
+                              className="w-full h-full object-cover"
+                            />
                           ) : (
-                            <span className="text-xs text-red-400 ml-2">Pflichtfeld</span>
+                            <div className="text-gray-400 flex flex-col items-center">
+                              <ImageIcon size={64} className="mb-4 opacity-50" />
+                              <p>Keine Bilder vorhanden</p>
+                              <p className="text-sm mt-2">Bitte fÃ¼gen Sie Bilder hinzu</p>
+                            </div>
                           )}
-                        </label>
+
+                          {/* Overlay fÃ¼r Bildinformationen */}
+                          {editingCar.images && editingCar.images.length > 0 && (
+                            <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white py-2 px-4 text-sm">
+                              <div className="flex justify-between items-center">
+                                <span>Hauptbild</span>
+                                <span>{editingCar.images.length} {editingCar.images.length === 1 ? 'Bild' : 'Bilder'} insgesamt</span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="grid grid-cols-4 gap-4">
+                          {editingCar.images && editingCar.images.map((image: string, index: number) => (
+                            <div
+                              key={index}
+                              className="bg-[#16181f]/60 backdrop-blur-md rounded-lg overflow-hidden h-24 relative group"
+                            >
+                              <img
+                                src={image}
+                                alt={`${editingCar.brand || 'Neues'} ${editingCar.model || 'Fahrzeug'} thumbnail`}
+                                className="w-full h-full object-cover"
+                              />
+
+                              {/* Image Controls Overlay */}
+                              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <div className="flex space-x-2">
+                                  {index !== 0 && (
+                                    <button 
+                                      onClick={() => {
+                                        const newImages = [...editingCar.images];
+                                        [newImages[index-1], newImages[index]] = [newImages[index], newImages[index-1]];
+                                        updateCarField('images', newImages);
+                                      }}
+                                      className="w-8 h-8 flex items-center justify-center bg-white/20 rounded-full hover:bg-white/40 transition-colors"
+                                      title="Nach links verschieben"
+                                    >
+                                      <ChevronLeft className="w-4 h-4 text-white" />
+                                    </button>
+                                  )}
+
+                                  <button 
+                                    onClick={() => {
+                                      const newImages = editingCar.images.filter((_, i) => i !== index);
+                                      updateCarField('images', newImages);
+                                    }}
+                                    className="w-8 h-8 flex items-center justify-center bg-red-500/80 rounded-full hover:bg-red-600 transition-colors"
+                                    title="Bild entfernen"
+                                  >
+                                    <Trash2 className="w-4 h-4 text-white" />
+                                  </button>
+
+                                  {index !== editingCar.images.length - 1 && (
+                                    <button 
+                                      onClick={() => {
+                                        const newImages = [...editingCar.images];
+                                        [newImages[index], newImages[index+1]] = [newImages[index+1], newImages[index]];
+                                        updateCarField('images', newImages);
+                                      }}
+                                      className="w-8 h-8 flex items-center justify-center bg-white/20 rounded-full hover:bg-white/40 transition-colors"
+                                      title="Nach rechts verschieben"
+                                    >
+                                      <ChevronRight className="w-4 h-4 text-white" />
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Badge fÃ¼r Hauptbild */}
+                              {index === 0 && (
+                                <div className="absolute top-1 left-1 bg-[#14A79D]/90 text-white text-xs px-1.5 py-0.5 rounded">
+                                  Hauptbild
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="space-y-2">
+                          <h3 className="text-white font-semibold mb-2 flex items-center">
+                            <Upload className="w-4 h-4 mr-2 text-[#14A79D]" />
+                            Bilder hochladen
+                          </h3>
+                          <ImageUpload
+                            onImagesUploaded={(urls) => 
+                              updateCarField('images', [...(editingCar.images || []), ...urls])
+                            }
+                            bucketName="car-images"
+                            enableWatermarkOption={true}
+                            watermarkPosition="topLeft"
+                          />
+                          <div className="text-gray-400 text-sm mt-2 bg-[#1a1c25]/60 p-3 rounded-lg border border-gray-700">
+                            <div className="flex items-start mb-2">
+                              <Info className="w-4 h-4 text-[#14A79D] mr-2 mt-0.5" />
+                              <span>Hinweise zu Fahrzeugbildern:</span>
+                            </div>
+                            <ul className="list-disc pl-6 space-y-1 text-xs">
+                              <li>Das erste Bild wird als Hauptbild verwendet</li>
+                              <li>Sie kÃ¶nnen die Bilder neu anordnen, indem Sie mit den Pfeilen die Position Ã¤ndern</li>
+                              <li>Achten Sie auf eine hohe BildqualitÃ¤t (min. 1200x800px)</li>
+                              <li>Laden Sie Bilder aus verschiedenen Perspektiven hoch (AuÃŸen, Innen, Details)</li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Right Column - Car Details */}
+                      <div className="bg-[#16181f]/60 backdrop-blur-md rounded-lg p-8">
+                        <div className="mb-8">
+                          <div className="mb-6 grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-gray-400 text-sm mb-1">Marke</label>
                         <input
                           type="text"
                           value={editingCar.brand || ''}
                           onChange={(e) => updateCarField('brand', e.target.value)}
-                          className={`w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 ${
-                            editingCar.brand ? 'border border-green-500/30 focus:ring-green-400' : 'border border-red-500/30 focus:ring-red-400'
-                          }`}
-                          placeholder="z.B. BMW, Mercedes, Audi"
+                                placeholder="z.B. BMW"
+                          className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
                         />
                       </div>
                       <div>
-                        <label className="block text-gray-300 mb-2 flex items-center">
-                          Modell <span className="text-red-500 ml-1">*</span>
-                          {editingCar.model ? (
-                            <CheckCircle className="w-4 h-4 text-green-500 ml-2" />
-                          ) : (
-                            <span className="text-xs text-red-400 ml-2">Pflichtfeld</span>
-                          )}
-                        </label>
+                              <label className="block text-gray-400 text-sm mb-1">Modell</label>
                         <input
                           type="text"
                           value={editingCar.model || ''}
                           onChange={(e) => updateCarField('model', e.target.value)}
-                          className={`w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 ${
-                            editingCar.model ? 'border border-green-500/30 focus:ring-green-400' : 'border border-red-500/30 focus:ring-red-400'
-                          }`}
-                          placeholder="z.B. 3er, A-Klasse, A4"
+                                placeholder="z.B. M4"
+                          className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
                         />
                       </div>
+                      </div>
+
+                          <div className="mb-6">
+                            <label className="block text-gray-400 text-sm mb-1">Preis (â‚¬)</label>
+                            <div className="relative">
+                              <input
+                                type="number"
+                                value={editingCar.price || ''}
+                                onChange={(e) => updateCarField('price', parseInt(e.target.value))}
+                                placeholder="Preis in Euro"
+                                className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+                              />
+                              <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">â‚¬</div>
+                            </div>
+                            <div className="mt-2 text-right text-gray-400 text-sm">inkl. MwSt.</div>
+                          </div>
+
+                          {/* Condition Badges Controls */}
+                          <div className="mb-6">
+                            <h3 className="text-white font-semibold mb-2">Fahrzeugzustand</h3>
+                            <div className="grid grid-cols-2 gap-4 mb-4">
+                              <label className="flex items-center gap-2 text-gray-300">
+                                <input
+                                  type="checkbox"
+                                  checked={editingCar.condition?.warranty || false}
+                                  onChange={(e) => updateConditionField('warranty', e.target.checked)}
+                                  className="w-4 h-4 rounded bg-[#1a1c25] border-gray-600 text-[#14A79D] focus:ring-[#14A79D]"
+                                />
+                                Garantie
+                              </label>
+                              <label className="flex items-center gap-2 text-gray-300">
+                                <input
+                                  type="checkbox"
+                                  checked={editingCar.condition?.serviceHistory || false}
+                                  onChange={(e) => updateConditionField('serviceHistory', e.target.checked)}
+                                  className="w-4 h-4 rounded bg-[#1a1c25] border-gray-600 text-[#14A79D] focus:ring-[#14A79D]"
+                                />
+                                Scheckheftgepflegt
+                              </label>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-gray-300 mb-2 flex items-center">
-                          Jahr <span className="text-red-500 ml-1">*</span>
-                          {editingCar.year ? (
-                            <CheckCircle className="w-4 h-4 text-green-500 ml-2" />
-                          ) : (
-                            <span className="text-xs text-red-400 ml-2">Pflichtfeld</span>
-                          )}
-                        </label>
+                                <label className="block text-gray-400 text-sm mb-1">Fahrzeugtyp</label>
+                                <select
+                                  value={editingCar.condition?.type || 'Gebraucht'}
+                                  onChange={(e) => updateConditionField('type', e.target.value)}
+                                  className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+                                >
+                                  <option value="Neu">Neu</option>
+                                  <option value="Gebraucht">Gebraucht</option>
+                                  <option value="Jahreswagen">Jahreswagen</option>
+                                </select>
+                              </div>
+                              <div>
+                                <label className="block text-gray-400 text-sm mb-1">Vorbesitzer</label>
                         <input
                           type="number"
-                          value={editingCar.year || ''}
-                          onChange={(e) => updateCarField('year', parseInt(e.target.value))}
-                          className={`w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 ${
-                            editingCar.year ? 'border border-green-500/30 focus:ring-green-400' : 'border border-red-500/30 focus:ring-red-400'
-                          }`}
-                          placeholder="z.B. 2020"
-                          min="1900"
-                          max={new Date().getFullYear()}
+                                  value={editingCar.condition?.previousOwners || 0}
+                                  onChange={(e) => updateConditionField('previousOwners', parseInt(e.target.value))}
+                          className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
                         />
                       </div>
-                      <div>
-                        <label className="block text-gray-300 mb-2 flex items-center">
-                          Preis <span className="text-red-500 ml-1">*</span>
-                          {editingCar.price > 0 ? (
-                            <CheckCircle className="w-4 h-4 text-green-500 ml-2" />
-                          ) : (
-                            <span className="text-xs text-red-400 ml-2">Pflichtfeld</span>
-                          )}
-                        </label>
-                        <div className="relative">
-                          <input
-                            type="number"
-                            value={editingCar.price || ''}
-                            onChange={(e) => updateCarField('price', parseInt(e.target.value))}
-                            className={`w-full bg-[#1a1c25] text-white px-4 py-2 pl-8 rounded-lg focus:outline-none focus:ring-2 ${
-                              editingCar.price > 0 ? 'border border-green-500/30 focus:ring-green-400' : 'border border-red-500/30 focus:ring-red-400'
-                            }`}
-                            placeholder="z.B. 25000"
-                            min="0"
-                          />
-                          <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">€</span>
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-gray-300 mb-2 flex items-center">
-                          Kilometerstand <span className="text-red-500 ml-1">*</span>
-                          {editingCar.mileage >= 0 ? (
-                            <CheckCircle className="w-4 h-4 text-green-500 ml-2" />
-                          ) : (
-                            <span className="text-xs text-red-400 ml-2">Pflichtfeld</span>
-                          )}
-                        </label>
-                        <div className="relative">
-                          <input
-                            type="number"
-                            value={editingCar.mileage || ''}
-                            onChange={(e) => updateCarField('mileage', parseInt(e.target.value))}
-                            className={`w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 ${
-                              editingCar.mileage >= 0 ? 'border border-green-500/30 focus:ring-green-400' : 'border border-red-500/30 focus:ring-red-400'
-                            }`}
-                            placeholder="z.B. 50000"
-                            min="0"
-                          />
-                          <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">km</span>
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-gray-300 mb-2">Status</label>
+                            </div>
+                          </div>
+
+                          {/* Status */}
+                          <div className="mb-6">
+                            <label className="block text-gray-400 text-sm mb-1">Status</label>
                         <select
                           value={editingCar.status || 'available'}
                           onChange={(e) => updateCarField('status', e.target.value)}
-                          className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 border border-gray-700"
+                          className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
                         >
-                          <option value="available">Verfügbar</option>
+                          <option value="available">VerfÃ¼gbar</option>
                           <option value="sold">Verkauft</option>
                         </select>
-                      </div>
                     </div>
 
+                          {/* Key Details */}
+                          <h3 className="text-white font-semibold mb-2 flex items-center">
+                            <Car className="w-4 h-4 mr-2 text-[#14A79D]" />
+                            Fahrzeugdaten
+                          </h3>
+                          <div className="grid grid-cols-2 gap-4 text-gray-300 mb-6">
                     <div>
-                      <label className="block text-gray-300 mb-2">Beschreibung</label>
-                      <textarea
-                        value={editingCar.description || ''}
-                        onChange={(e) => updateCarField('description', e.target.value)}
-                        className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 h-32 resize-none border border-gray-700"
-                        placeholder="Ausführliche Beschreibung des Fahrzeugs..."
+                              <label className="block text-gray-400 text-sm mb-1">Erstzulassung (Jahr)</label>
+                              <input
+                                type="number"
+                                value={editingCar.year || ''}
+                                onChange={(e) => updateCarField('year', parseInt(e.target.value))}
+                                className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
                       />
                     </div>
-
                     <div>
-                      <label className="block text-gray-300 mb-2 flex items-center">
-                        Bilder 
-                        {editingCar.images && editingCar.images.length > 0 ? (
-                          <span className="text-xs text-green-400 ml-2">{editingCar.images.length} Bilder hochgeladen</span>
-                        ) : (
-                          <span className="text-xs text-orange-400 ml-2">Mindestens ein Bild empfohlen</span>
-                        )}
-                      </label>
-                      
-                      {/* Vorschau der bereits hochgeladenen Bilder */}
-                      {editingCar.images && editingCar.images.length > 0 && (
-                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 mb-4">
-                          {editingCar.images.map((imageUrl, index) => (
-                            <div key={index} className="relative group aspect-square overflow-hidden rounded-lg">
-                              <img 
-                                src={imageUrl} 
-                                alt={`Bild ${index + 1}`} 
-                                className="w-full h-full object-cover"
-                              />
-                              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                <button 
-                                  onClick={() => updateCarField('images', editingCar.images.filter((_, i) => i !== index))}
-                                  className="bg-red-500 text-white p-1 rounded-full"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
+                              <label className="block text-gray-400 text-sm mb-1">Kilometerstand</label>
+                              <div className="relative">
+                                <input
+                                  type="number"
+                                  value={editingCar.mileage || ''}
+                                  onChange={(e) => updateCarField('mileage', parseInt(e.target.value))}
+                                  className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+                                />
+                                <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">km</div>
                               </div>
                             </div>
-                          ))}
-                        </div>
-                      )}
-                      
-                      <ImageUpload
-                        onImagesUploaded={(urls) => 
-                          updateCarField('images', [...(editingCar.images || []), ...urls])
-                        }
-                        bucketName="car-images"
-                        enableWatermarkOption={true}
-                        watermarkPosition="topLeft"
-                      />
-                    </div>
-                  </>
-                )}
-
-                {activeTab === 'specs' && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-gray-300 mb-2">Motor</label>
+                              <label className="block text-gray-400 text-sm mb-1">Kraftstoff</label>
                       <input
                         type="text"
-                        value={editingCar.specs?.engine || ''}
-                        onChange={(e) => updateSpecsField('engine', e.target.value)}
+                                value={editingCar.specs?.fuelType || ''}
+                                onChange={(e) => updateSpecsField('fuelType', e.target.value)}
+                                placeholder="z.B. Benzin"
                         className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
                       />
                     </div>
                     <div>
-                      <label className="block text-gray-300 mb-2">Leistung</label>
-                      <input
-                        type="text"
-                        value={editingCar.specs?.power || ''}
-                        onChange={(e) => updateSpecsField('power', e.target.value)}
-                        className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-gray-300 mb-2">Getriebe</label>
+                              <label className="block text-gray-400 text-sm mb-1">Getriebe</label>
                       <input
                         type="text"
                         value={editingCar.specs?.transmission || ''}
                         onChange={(e) => updateSpecsField('transmission', e.target.value)}
+                                placeholder="z.B. Automatik"
                         className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
                       />
                     </div>
+                    </div>
+
+                          {/* Additional Specs */}
+                          <h3 className="text-white font-semibold mb-2">Weitere Spezifikationen</h3>
+                          <div className="grid grid-cols-2 gap-4 text-gray-300">
                     <div>
-                      <label className="block text-gray-300 mb-2">Kraftstoff</label>
+                              <label className="block text-gray-400 text-sm mb-1">Leistung</label>
                       <input
                         type="text"
-                        value={editingCar.specs?.fuelType || ''}
-                        onChange={(e) => updateSpecsField('fuelType', e.target.value)}
+                                value={editingCar.specs?.power || ''}
+                                onChange={(e) => updateSpecsField('power', e.target.value)}
+                                placeholder="z.B. 250 kW (340 PS)"
                         className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
                       />
                     </div>
                     <div>
-                      <label className="block text-gray-300 mb-2">Beschleunigung</label>
+                              <label className="block text-gray-400 text-sm mb-1">Hubraum</label>
                       <input
                         type="text"
-                        value={editingCar.specs?.acceleration || ''}
-                        onChange={(e) => updateSpecsField('acceleration', e.target.value)}
+                                value={editingCar.specs?.hubraum || ''}
+                                onChange={(e) => updateSpecsField('hubraum', e.target.value)}
+                                placeholder="z.B. 3.0L"
                         className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
                       />
                     </div>
                     <div>
-                      <label className="block text-gray-300 mb-2">Höchstgeschwindigkeit</label>
-                      <input
-                        type="text"
-                        value={editingCar.specs?.topSpeed || ''}
-                        onChange={(e) => updateSpecsField('topSpeed', e.target.value)}
-                        className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-gray-300 mb-2">Verbrauch</label>
+                              <label className="block text-gray-400 text-sm mb-1">Verbrauch</label>
                       <input
                         type="text"
                         value={editingCar.specs?.consumption || ''}
                         onChange={(e) => updateSpecsField('consumption', e.target.value)}
+                                placeholder="z.B. 8.2 l/100km"
                         className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
                       />
                     </div>
                     <div>
-                      <label className="block text-gray-300 mb-2">CO2-Emissionen</label>
+                              <label className="block text-gray-400 text-sm mb-1">COâ‚‚-Emissionen</label>
                       <input
                         type="text"
                         value={editingCar.specs?.emissions || ''}
                         onChange={(e) => updateSpecsField('emissions', e.target.value)}
+                                placeholder="z.B. 170 g/km"
+                        className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+                      />
+                    </div>
+                    </div>
+                    </div>
+                    </div>
+                    </div>
+
+                    {/* Features Section */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+                      <div className="bg-[#16181f]/60 backdrop-blur-md rounded-lg p-8">
+                        <h2 className="text-2xl font-bold text-white mb-6 flex items-center">
+                          <CheckSquare className="w-5 h-5 text-[#14A79D] mr-2" />
+                          Ausstattung
+                        </h2>
+                        <div className="mb-3">
+                          <div className="flex justify-between mb-2">
+                            <label className="text-gray-300 text-sm">Eine Ausstattung pro Zeile eintragen</label>
+                            <span className="text-gray-400 text-xs">{editingCar.features?.length || 0} EintrÃ¤ge</span>
+                          </div>
+                          <textarea
+                            value={editingCar.features?.join('\n') || ''}
+                            onChange={(e) => updateCarField('features', e.target.value.split('\n').filter(Boolean))}
+                            placeholder="Eine Ausstattung pro Zeile eintragen"
+                            className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 h-48 resize-none"
+                          />
+                        </div>
+                        <div className="text-gray-400 text-sm bg-[#1a1c25]/60 p-3 rounded-lg border border-gray-700">
+                          <p className="mb-2">Beispiele fÃ¼r Ausstattungsmerkmale:</p>
+                          <div className="grid grid-cols-2 gap-2 text-xs">
+                            <span>â€¢ Klimaanlage</span>
+                            <span>â€¢ Navigationssystem</span>
+                            <span>â€¢ Sitzheizung</span>
+                            <span>â€¢ Einparkhilfe</span>
+                            <span>â€¢ Bluetooth</span>
+                            <span>â€¢ Lederausstattung</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-[#16181f]/60 backdrop-blur-md rounded-lg p-8">
+                        <h2 className="text-2xl font-bold text-white mb-6 flex items-center">
+                          <Star className="w-6 h-6 text-orange-400 mr-2" />
+                          Sonderausstattung
+                        </h2>
+                        <div className="mb-3">
+                          <div className="flex justify-between mb-2">
+                            <label className="text-gray-300 text-sm">Eine Sonderausstattung pro Zeile eintragen</label>
+                            <span className="text-gray-400 text-xs">{editingCar.additionalFeatures?.length || 0} EintrÃ¤ge</span>
+                          </div>
+                          <textarea
+                            value={editingCar.additionalFeatures?.join('\n') || ''}
+                            onChange={(e) => updateCarField('additionalFeatures', e.target.value.split('\n').filter(Boolean))}
+                            placeholder="Eine Sonderausstattung pro Zeile eintragen"
+                            className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 h-48 resize-none"
+                          />
+                        </div>
+                        <div className="text-gray-400 text-sm bg-[#1a1c25]/60 p-3 rounded-lg border border-gray-700">
+                          <p className="mb-2">Beispiele fÃ¼r Sonderausstattung:</p>
+                          <div className="grid grid-cols-2 gap-2 text-xs">
+                            <span>â€¢ Premium-Soundsystem</span>
+                            <span>â€¢ Head-up Display</span>
+                            <span>â€¢ 360Â°-Kamera</span>
+                            <span>â€¢ Sportpaket</span>
+                            <span>â€¢ Panorama-Glasdach</span>
+                            <span>â€¢ Nappa-Lederausstattung</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Description Section */}
+                    <div className="bg-[#16181f]/60 backdrop-blur-md rounded-lg p-8 mb-12">
+                      <h2 className="text-2xl font-bold text-white mb-6 flex items-center">
+                        <FileCheck className="w-6 h-6 text-[#14A79D] mr-2" />
+                        Fahrzeugbeschreibung
+                      </h2>
+                      <textarea
+                        value={editingCar.description || ''}
+                        onChange={(e) => updateCarField('description', e.target.value)}
+                        placeholder="AusfÃ¼hrliche Beschreibung des Fahrzeugs..."
+                        className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 h-48 resize-none"
+                      />
+                      
+                      <div className="text-gray-400 text-sm mt-3 bg-[#1a1c25]/60 p-3 rounded-lg border border-gray-700">
+                        <div className="flex items-start mb-2">
+                          <Info className="w-4 h-4 text-[#14A79D] mr-2 mt-0.5" />
+                          <span>Tipps fÃ¼r eine gute Beschreibung:</span>
+                        </div>
+                        <ul className="list-disc pl-6 space-y-1 text-xs">
+                          <li>Beginnen Sie mit einer kurzen Zusammenfassung des Fahrzeugs</li>
+                          <li>Beschreiben Sie besondere Merkmale und den Zustand</li>
+                          <li>ErwÃ¤hnen Sie die Wartungshistorie und vorherige Besitzer</li>
+                          <li>Heben Sie Alleinstellungsmerkmale hervor</li>
+                        </ul>
+                      </div>
+                    </div>
+
+                    {/* Technical Details Section */}
+                    <div className="bg-[#16181f]/60 backdrop-blur-md rounded-lg p-8 mb-12">
+                      <h2 className="text-2xl font-bold text-white mb-6">Technische Details</h2>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                          <label className="block text-gray-300 mb-2">Motor</label>
+                      <input
+                        type="text"
+                            value={editingCar.specs?.engine || ''}
+                            onChange={(e) => updateSpecsField('engine', e.target.value)}
                         className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
                       />
                     </div>
                     <div>
-                      <label className="block text-gray-300 mb-2">Hubraum</label>
+                          <label className="block text-gray-300 mb-2">HÃ¶chstgeschwindigkeit</label>
                       <input
                         type="text"
-                        value={editingCar.specs?.hubraum || ''}
-                        onChange={(e) => updateSpecsField('hubraum', e.target.value)}
+                            value={editingCar.specs?.topSpeed || ''}
+                            onChange={(e) => updateSpecsField('topSpeed', e.target.value)}
                         className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
                       />
                     </div>
                     <div>
-                      <label className="block text-gray-300 mb-2">Sitze</label>
+                          <label className="block text-gray-300 mb-2">Beschleunigung</label>
                       <input
                         type="text"
-                        value={editingCar.specs?.seats || ''}
-                        onChange={(e) => updateSpecsField('seats', e.target.value)}
-                        className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-gray-300 mb-2">Türen</label>
-                      <input
-                        type="text"
-                        value={editingCar.specs?.doors || ''}
-                        onChange={(e) => updateSpecsField('doors', e.target.value)}
-                        className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-gray-300 mb-2">Emissionsklasse</label>
-                      <input
-                        type="text"
-                        value={editingCar.specs?.emissionClass || ''}
-                        onChange={(e) => updateSpecsField('emissionClass', e.target.value)}
-                        className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-gray-300 mb-2">Umweltplakette</label>
-                      <input
-                        type="text"
-                        value={editingCar.specs?.environmentBadge || ''}
-                        onChange={(e) => updateSpecsField('environmentBadge', e.target.value)}
-                        className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-gray-300 mb-2">HU</label>
-                      <input
-                        type="text"
-                        value={editingCar.specs?.inspection || ''}
-                        onChange={(e) => updateSpecsField('inspection', e.target.value)}
-                        className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-gray-300 mb-2">Klimaanlage</label>
-                      <input
-                        type="text"
-                        value={editingCar.specs?.airConditioning || ''}
-                        onChange={(e) => updateSpecsField('airConditioning', e.target.value)}
-                        className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-gray-300 mb-2">Einparkhilfe</label>
-                      <input
-                        type="text"
-                        value={editingCar.specs?.parkingAssist || ''}
-                        onChange={(e) => updateSpecsField('parkingAssist', e.target.value)}
-                        className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-gray-300 mb-2">Airbags</label>
-                      <input
-                        type="text"
-                        value={editingCar.specs?.airbags || ''}
-                        onChange={(e) => updateSpecsField('airbags', e.target.value)}
+                            value={editingCar.specs?.acceleration || ''}
+                            onChange={(e) => updateSpecsField('acceleration', e.target.value)}
                         className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
                       />
                     </div>
@@ -1675,426 +1700,74 @@ const Admin = () => {
                       />
                     </div>
                     <div>
-                      <label className="block text-gray-300 mb-2">Anhängelast</label>
+                          <label className="block text-gray-300 mb-2">Sitze</label>
                       <input
                         type="text"
-                        value={editingCar.specs?.trailerLoad || ''}
-                        onChange={(e) => updateSpecsField('trailerLoad', e.target.value)}
+                            value={editingCar.specs?.seats || ''}
+                            onChange={(e) => updateSpecsField('seats', e.target.value)}
                         className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
                       />
                     </div>
-                    <div>
-                      <label className="block text-gray-300 mb-2">Zylinder</label>
-                      <input
-                        type="text"
-                        value={editingCar.specs?.cylinders || ''}
-                        onChange={(e) => updateSpecsField('cylinders', e.target.value)}
-                        className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
-                      />
                     </div>
-                    <div>
-                      <label className="block text-gray-300 mb-2">Tankvolumen</label>
-                      <input
-                        type="text"
-                        value={editingCar.specs?.tankVolume || ''}
-                        onChange={(e) => updateSpecsField('tankVolume', e.target.value)}
-                        className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
-                      />
                     </div>
                   </div>
-                )}
-
-                {activeTab === 'features' && (
-                  <div className="space-y-6">
-                    <div>
-                      <label className="block text-gray-300 mb-2">Ausstattung</label>
-                      <div className="bg-gradient-to-r from-[#14A79D]/10 to-[#14A79D]/5 rounded-lg p-5 border border-[#14A79D]/20 mb-4">
-                        <p className="text-gray-300 mb-3">
-                          Geben Sie Ausstattungsmerkmale ein - jedes in einer neuen Zeile. 
-                          Für eine bessere Strukturierung können Sie Kategorien erstellen, indem Sie 
-                          <span className="font-bold text-[#14A79D]"> #Kategoriename:</span> verwenden.
-                        </p>
-                        <div className="text-sm bg-[#1a1c25] p-3 rounded-md text-gray-400 mb-3">
-                          <p className="mb-1">#Sicherheit &amp; Assistenz:</p>
-                          <p className="mb-1">Airbag Fahrer-/Beifahrerseite</p>
-                          <p className="mb-1">Aktive Motorhaube</p>
-                          <p className="mb-1">#Antrieb &amp; Fahrwerk:</p>
-                          <p className="mb-1">Allradantrieb</p>
-                          <p className="mb-1">Automatisches Bremsen Differential</p>
-                        </div>
-                      </div>
-                      <textarea
-                        value={editingCar.features?.join('\n') || ''}
-                        onChange={(e) => updateCarField('features', e.target.value.split('\n').filter(Boolean))}
-                        placeholder="Geben Sie Ausstattungsmerkmale ein - eines pro Zeile. Für Kategorien verwenden Sie #Kategoriename:"
-                        className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 h-64 resize-none"
-                      />
                     </div>
-
-                    <div>
-                      <label className="block text-gray-300 mb-2">Zusatzausstattung</label>
-                      <textarea
-                        value={editingCar.additionalFeatures?.join('\n') || ''}
-                        onChange={(e) => updateCarField('additionalFeatures', e.target.value.split('\n').filter(Boolean))}
-                        placeholder="Eine Zusatzausstattung pro Zeile"
-                        className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 h-48 resize-none"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {activeTab === 'condition' && (
-                  <div className="space-y-6">
-                    <div>
-                      <label className="block text-gray-300 mb-2">Zustand</label>
-                      <select
-                        value={editingCar.condition?.type || 'Gebraucht'}
-                        onChange={(e) => updateConditionField('type', e.target.value)}
-                        className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
-                      >
-                        <option value="Neu">Neu</option>
-                        <option value="Gebraucht">Gebraucht</option>
-                        <option value="Jahreswagen">Jahreswagen</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-gray-300 mb-2">Vorbesitzer</label>
-                      <input
-                        type="number"
-                        value={editingCar.condition?.previousOwners || 0}
-                        onChange={(e) => updateConditionField('previousOwners', parseInt(e.target.value))}
-                        className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
-                      />
-                    </div>
-
-                    <div className="flex items-center gap-4">
-                      <label className="flex items-center gap-2 text-gray-300">
-                        <input
-                          type="checkbox"
-                          checked={editingCar.condition?.accident || false}
-                          onChange={(e) => updateConditionField('accident', e.target.checked)}
-                          className="w-4 h-4 rounded bg-[#1a1c25] border-gray-600 text-[#14A79D] focus:ring-[#14A79D]"
-                        />
-                        Unfallfahrzeug
-                      </label>
-                      <label className="flex items-center gap-2 text-gray-300">
-                        <input
-                          type="checkbox"
-                          checked={editingCar.condition?.warranty || false}
-                          onChange={(e) => updateConditionField('warranty', e.target.checked)}
-                          className="w-4 h-4 rounded bg-[#1a1c25] border-gray-600 text-[#14A79D] focus:ring-[#14A79D]"
-                        />
-                        Garantie
-                      </label>
-                      <label className="flex items-center gap-2 text-gray-300">
-                        <input
-                          type="checkbox"
-                          checked={editingCar.condition?.serviceHistory || false}
-                          onChange={(e) => updateConditionField('serviceHistory', e.target.checked)}
-                          className="w-4 h-4 rounded bg-[#1a1c25] border-gray-600 text-[#14A79D] focus:ring-[#14A79D]"
-                        />
-                        Scheckheftgepflegt
-                      </label>
-                    </div>
-                  </div>
-                )}
               </div>
-              ) : (
-                // CarDetails Preview Mode
-                <div className="p-6">
-                  <div className="min-h-[800px] px-4">
-                    <div className="max-w-7xl mx-auto">
-                      {editingCar.condition?.accident && (
-                        <div className="mb-8 bg-red-500/10 border border-red-500/20 rounded-lg p-4 flex items-center">
-                          <AlertTriangle className="w-6 h-6 text-red-500 mr-3" />
-                          <div>
-                            <h3 className="text-red-500 font-semibold mb-1">Unfallfahrzeug</h3>
-                            <p className="text-gray-300">Dieses Fahrzeug hat einen dokumentierten Unfallschaden. Weitere Details finden Sie in der Fahrzeugbeschreibung.</p>
-                          </div>
-                        </div>
-                      )}
 
-                      <motion.div
-                        initial={{ opacity: 0, y: this }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12"
-                      >
-                        {/* Left Column - Images */}
-                        <div className="space-y-4">
-                          <div className="bg-[#16181f]/60 backdrop-blur-md rounded-lg overflow-hidden relative group h-[400px] flex items-center justify-center">
-                            {editingCar.images && editingCar.images.length > 0 ? (
-                              <img
-                                src={editingCar.images[0]}
-                                alt={`${editingCar.brand || 'Neues'} ${editingCar.model || 'Fahrzeug'}`}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <div className="text-gray-400 flex flex-col items-center">
-                                <ImageIcon size={64} className="mb-4 opacity-50" />
-                                <p>Keine Bilder vorhanden</p>
-                                <p className="text-sm mt-2">Fügen Sie Bilder im Tab "Basis" hinzu</p>
-                              </div>
-                            )}
-                          </div>
-                          
-                          <div className="grid grid-cols-4 gap-4">
-                            {editingCar.images && editingCar.images.map((image: string, index: number) => (
-                              <div
-                                key={index}
-                                className="bg-[#16181f]/60 backdrop-blur-md rounded-lg overflow-hidden h-24"
-                              >
-                                <img
-                                  src={image}
-                                  alt={`${editingCar.brand || 'Neues'} ${editingCar.model || 'Fahrzeug'} thumbnail`}
-                                  className="w-full h-full object-cover"
-                                />
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Right Column - Car Details */}
-                        <div className="bg-[#16181f]/60 backdrop-blur-md rounded-lg p-8">
-                          <div className="mb-8">
-                            <h1 className="text-4xl font-bold text-white mb-4">
-                              {editingCar.brand || 'Marke'} {editingCar.model || 'Modell'}
-                            </h1>
-                            <div className="flex items-center justify-between mb-6">
-                              <p className="text-3xl text-orange-400 font-bold">
-                                €{(editingCar.price || 0).toLocaleString()}
-                              </p>
-                              <span className="text-gray-400">inkl. MwSt.</span>
-                            </div>
-
-                            {/* Condition Badges */}
-                            <div className="mb-6 flex flex-wrap gap-2">
-                              {editingCar.condition?.accident ? (
-                                <div className="inline-flex items-center bg-red-500/20 text-red-400 px-3 py-1 rounded-full text-sm">
-                                  <X className="w-4 h-4 mr-1" />
-                                  Unfallfahrzeug
-                                </div>
-                              ) : (
-                                <div className="inline-flex items-center bg-green-500/20 text-green-400 px-3 py-1 rounded-full text-sm">
-                                  <Check className="w-4 h-4 mr-1" />
-                                  Unfallfrei
-                                </div>
-                              )}
-                              
-                              {editingCar.condition?.warranty ? (
-                                <div className="inline-flex items-center bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full text-sm">
-                                  <Shield className="w-4 h-4 mr-1" />
-                                  Garantie
-                                </div>
-                              ) : (
-                                <div className="inline-flex items-center bg-yellow-500/20 text-yellow-400 px-3 py-1 rounded-full text-sm">
-                                  <AlertTriangle className="w-4 h-4 mr-1" />
-                                  Keine Garantie
-                                </div>
-                              )}
-
-                              {editingCar.condition?.serviceHistory && (
-                                <div className="inline-flex items-center bg-purple-500/20 text-purple-400 px-3 py-1 rounded-full text-sm">
-                                  <BookCheck className="w-4 h-4 mr-1" />
-                                  Scheckheftgepflegt
-                                </div>
-                              )}
-
-                              {editingCar.condition?.previousOwners === 0 && (
-                                <div className="inline-flex items-center bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full text-sm">
-                                  <Award className="w-4 h-4 mr-1" />
-                                  Erstbesitz
-                                </div>
-                              )}
-
-                              {editingCar.condition?.previousOwners > 0 && (
-                                <div className="inline-flex items-center bg-gray-500/20 text-gray-400 px-3 py-1 rounded-full text-sm">
-                                  <Info className="w-4 h-4 mr-1" />
-                                  {editingCar.condition.previousOwners} Vorbesitzer
-                                </div>
-                              )}
-
-                              {editingCar.condition?.type === 'Neu' && (
-                                <div className="inline-flex items-center bg-indigo-500/20 text-indigo-400 px-3 py-1 rounded-full text-sm">
-                                  <Sparkles className="w-4 h-4 mr-1" />
-                                  Neufahrzeug
-                                </div>
-                              )}
-
-                              {!editingCar.condition?.accident && editingCar.condition?.warranty && editingCar.condition?.serviceHistory && (
-                                <div className="inline-flex items-center bg-rose-500/20 text-rose-400 px-3 py-1 rounded-full text-sm">
-                                  <Heart className="w-4 h-4 mr-1" />
-                                  Top Zustand
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Key Details */}
-                            <div className="grid grid-cols-2 gap-4 text-gray-300">
-                              <div className="flex items-center">
-                                <Calendar className="w-5 h-5 mr-2 text-orange-400" />
-                                <div>
-                                  <p className="text-gray-400 text-sm">Erstzulassung</p>
-                                  <p className="font-semibold">{editingCar.year || 'Jahr'}</p>
-                                </div>
-                              </div>
-                              <div className="flex items-center">
-                                <Gauge className="w-5 h-5 mr-2 text-orange-400" />
-                                <div>
-                                  <p className="text-gray-400 text-sm">Kilometerstand</p>
-                                  <p className="font-semibold">{(editingCar.mileage || 0).toLocaleString()} km</p>
-                                </div>
-                              </div>
-                              <div className="flex items-center">
-                                <Car className="w-5 h-5 mr-2 text-orange-400" />
-                                <div>
-                                  <p className="text-gray-400 text-sm">Kraftstoff</p>
-                                  <p className="font-semibold">{editingCar.specs?.fuelType || 'Nicht angegeben'}</p>
-                                </div>
-                              </div>
-                              <div className="flex items-center">
-                                <Settings className="w-5 h-5 mr-2 text-orange-400" />
-                                <div>
-                                  <p className="text-gray-400 text-sm">Getriebe</p>
-                                  <p className="font-semibold">{editingCar.specs?.transmission || 'Nicht angegeben'}</p>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Additional Specs */}
-                            <div className="mt-6 grid grid-cols-2 gap-4 text-gray-300">
-                              <div>
-                                <p className="text-gray-400 text-sm">Leistung</p>
-                                <p className="font-semibold">{editingCar.specs?.power || 'Nicht angegeben'}</p>
-                              </div>
-                              <div>
-                                <p className="text-gray-400 text-sm">Hubraum</p>
-                                <p className="font-semibold">{editingCar.specs?.hubraum || 'Nicht angegeben'}</p>
-                              </div>
-                              <div>
-                                <p className="text-gray-400 text-sm">Verbrauch</p>
-                                <p className="font-semibold">{editingCar.specs?.consumption || 'Nicht angegeben'}</p>
-                              </div>
-                              <div>
-                                <p className="text-gray-400 text-sm">CO₂-Emissionen</p>
-                                <p className="font-semibold">{editingCar.specs?.emissions || 'Nicht angegeben'}</p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </motion.div>
-
-                      {/* Features Section */}
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-                        <motion.div
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="bg-[#16181f]/60 backdrop-blur-md rounded-lg p-8"
-                        >
-                          <h2 className="text-2xl font-bold text-white mb-6">Ausstattung</h2>
-                          <div className="grid grid-cols-2 gap-4">
-                            {editingCar.features && editingCar.features.length > 0 ? (
-                              editingCar.features.map((feature: string, index: number) => (
-                                <motion.div
-                                  key={index}
-                                  initial={{ opacity: 0, x: -20 }}
-                                  animate={{ opacity: 1, x: 0 }}
-                                  transition={{ delay: index * 0.05 }}
-                                  className="flex items-center text-gray-300"
-                                >
-                                  <Check className="w-5 h-5 text-orange-400 mr-2" />
-                                  <span>{feature}</span>
-                                </motion.div>
-                              ))
-                            ) : (
-                              <div className="text-gray-400 col-span-2 py-4">
-                                Keine Ausstattung eingetragen
-                              </div>
-                            )}
-                          </div>
-                        </motion.div>
-
-                        <motion.div
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="bg-[#16181f]/60 backdrop-blur-md rounded-lg p-8"
-                        >
-                          <h2 className="text-2xl font-bold text-white mb-6 flex items-center">
-                            <Star className="w-6 h-6 text-orange-400 mr-2" />
-                            Sonderausstattung
-                          </h2>
-                          <div className="grid grid-cols-1 gap-4">
-                            {editingCar.additionalFeatures && editingCar.additionalFeatures.length > 0 ? (
-                              editingCar.additionalFeatures.map((feature: string, index: number) => (
-                                <motion.div
-                                  key={index}
-                                  initial={{ opacity: 0, x: 20 }}
-                                  animate={{ opacity: 1, x: 0 }}
-                                  transition={{ delay: index * 0.05 }}
-                                  className="bg-gradient-to-br from-[#1a1c25] to-[#1e2029] p-4 rounded-lg"
-                                >
-                                  <div className="flex items-start space-x-3">
-                                    <div className="w-2 h-2 bg-orange-400 rounded-full mt-2 flex-shrink-0" />
-                                    <span className="text-gray-300">{feature}</span>
-                                  </div>
-                                </motion.div>
-                              ))
-                            ) : (
-                              <div className="text-gray-400 py-4">
-                                Keine Sonderausstattung eingetragen
-                              </div>
-                            )}
-                          </div>
-                        </motion.div>
-                      </div>
-
-                      {/* Description Section */}
-                      <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="bg-[#16181f]/60 backdrop-blur-md rounded-lg p-8 mb-12"
-                      >
-                        <h2 className="text-2xl font-bold text-white mb-6">Fahrzeugbeschreibung</h2>
-                        <div className="space-y-8">
-                          <div className="bg-gradient-to-r from-[#1a1c25] to-[#1e2029] p-6 rounded-lg">
-                            <p className="text-xl text-gray-200 leading-relaxed">
-                              {editingCar.description || 'Keine Beschreibung vorhanden'}
-                            </p>
-                          </div>
-                        </div>
-                      </motion.div>
-                    </div>
-                  </div>
+              <div className="p-6 border-t border-gray-800 flex items-center justify-between">
+                <div className="text-sm text-gray-400">
+                  {editingCar && editingCar.id ? (
+                    <span>Fahrzeug wird bearbeitet â€¢ ID: {editingCar.id}</span>
+                  ) : (
+                    <span>Neues Fahrzeug wird erstellt</span>
+                  )}
                 </div>
-              )}
-
-              <div className="p-6 border-t border-gray-800 flex justify-end gap-4">
-                <button
-                  onClick={() => {
-                    setEditingCar(null);
-                    setIsAddingCar(false);
-                  }}
-                  className="px-4 py-2 text-gray-400 hover:text-white transition-colors"
-                >
-                  Abbrechen
-                </button>
-                <button
-                  onClick={() => {
-                    // Füge Validierung hinzu, bevor ein Auto gespeichert wird
-                    if (!editingCar.brand || !editingCar.model) {
-                      toast.error('Bitte geben Sie mindestens Marke und Modell ein');
-                      return;
-                    }
-                    handleSave(editingCar);
-                    setIsAddingCar(false);
-                  }}
-                  className="bg-[#14A79D] text-white px-6 py-2 rounded-lg hover:bg-[#118F86] transition-colors flex items-center gap-2"
-                >
-                  <Save className="w-5 h-5" />
-                  Speichern
-                </button>
+                <div className="flex gap-4">
+                  <button
+                    onClick={() => {
+                      if (window.confirm('Sind Sie sicher? Alle nicht gespeicherten Ã„nderungen gehen verloren.')) {
+                        setEditingCar(null);
+                        setIsAddingCar(false);
+                      }
+                    }}
+                    className="px-4 py-2 text-gray-400 hover:text-white transition-colors"
+                  >
+                    Abbrechen
+                  </button>
+                  <button
+                    onClick={() => {
+                      const requiredFields = {
+                        brand: 'Marke',
+                        model: 'Modell',
+                        price: 'Preis',
+                        images: 'Bilder'
+                      };
+                      
+                      const missingFields = Object.entries(requiredFields)
+                        .filter(([key, _]) => {
+                          if (key === 'images') {
+                            return !editingCar.images || !editingCar.images.length;
+                          }
+                          return !editingCar[key];
+                        })
+                        .map(([_, label]) => label);
+                        
+                      if (missingFields.length > 0) {
+                        toast.error(`Bitte fÃ¼llen Sie folgende Felder aus: ${missingFields.join(', ')}`);
+                        return;
+                      }
+                      
+                      handleSave(editingCar);
+                      setIsAddingCar(false);
+                    }}
+                    className="bg-[#14A79D] text-white px-6 py-2 rounded-lg hover:bg-[#118F86] transition-colors flex items-center gap-2"
+                  >
+                    <Save className="w-5 h-5" />
+                    Speichern
+                  </button>
+                </div>
               </div>
-            </motion.div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
