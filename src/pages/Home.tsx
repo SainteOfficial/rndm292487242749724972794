@@ -217,27 +217,15 @@ const Home = () => {
       >
         {/* Beibehaltene Hintergrund-Elemente */}
         <div className="absolute inset-0">
-          <div className="absolute top-[20%] left-[15%] w-40 h-40 rounded-full bg-gradient-to-br from-[#14A79D]/30 to-[#00ffdd]/20 mix-blend-screen blur-3xl animate-float1"></div>
-          <div className="absolute top-[50%] right-[10%] w-56 h-56 rounded-full bg-gradient-to-tr from-orange-500/20 to-yellow-400/10 mix-blend-screen blur-3xl animate-float2"></div>
-          <div className="absolute bottom-[15%] left-[25%] w-72 h-72 rounded-full bg-gradient-to-br from-purple-500/20 to-blue-400/10 mix-blend-screen blur-3xl animate-float3"></div>
+          <div className="absolute top-[20%] left-[15%] w-20 md:w-40 h-20 md:h-40 rounded-full bg-gradient-to-br from-[#14A79D]/30 to-[#00ffdd]/20 mix-blend-screen blur-3xl animate-float1"></div>
+          <div className="absolute top-[50%] right-[10%] w-32 md:w-56 h-32 md:h-56 rounded-full bg-gradient-to-tr from-orange-500/20 to-yellow-400/10 mix-blend-screen blur-3xl animate-float2"></div>
+          <div className="absolute bottom-[15%] left-[25%] w-40 md:w-72 h-40 md:h-72 rounded-full bg-gradient-to-br from-purple-500/20 to-blue-400/10 mix-blend-screen blur-3xl animate-float3"></div>
           
           <div className="absolute inset-0 bg-[url('/particles-dot.svg')] opacity-10 animate-pulse"></div>
-          
-        <motion.div 
-            animate={{ rotate: [0, 10, 0, -10, 0], scale: [1, 1.05, 1, 0.95, 1] }}
-            transition={{ repeat: Infinity, duration: 15, ease: "easeInOut" }}
-            className="absolute top-[40%] right-[25%] w-28 h-28 rounded-full bg-gradient-to-br from-[#14A79D]/5 to-purple-500/5 backdrop-blur-md border border-white/5 opacity-40"
-          ></motion.div>
-          
-          <motion.div 
-            animate={{ rotate: [0, -5, 0, 5, 0], scale: [1, 0.95, 1, 1.05, 1] }}
-            transition={{ repeat: Infinity, duration: 12, ease: "easeInOut" }}
-            className="absolute top-[20%] left-[30%] w-24 h-24 rounded-lg bg-gradient-to-br from-yellow-500/5 to-orange-500/5 backdrop-blur-md border border-white/5 opacity-40"
-          ></motion.div>
         </div>
-        
-        {/* Overlay - beibehalten */}
-        <motion.div className="absolute inset-0 z-10 bg-gradient-to-r from-black/90 via-black/70 to-black/90" />
+
+        {/* Overlay mit verstärkter Deckkraft auf Mobile */}
+        <motion.div className="absolute inset-0 z-10 bg-gradient-to-r from-black/95 via-black/85 to-black/95 md:from-black/90 md:via-black/70 md:to-black/90" />
         
         {/* Background Image - beibehalten */}
         <motion.div 
@@ -248,89 +236,20 @@ const Home = () => {
         {/* KOMPLETT NEUER HERO-BEREICH MIT FUTURISTISCHEM DESIGN */}
         <div className="absolute inset-0 z-30 overflow-hidden">
           <div className="max-w-7xl mx-auto h-full px-4 sm:px-6">
-            {/* Hintergrund-Elemente mit Motion-Effekten */}
-            <div className="absolute inset-0 overflow-hidden">
-              {/* Große schwebende Rechtecke im Hintergrund */}
-                <motion.div
-                initial={{ opacity: 0, rotate: -5 }}
-                animate={{ opacity: 0.1, rotate: 5 }}
-                transition={{ 
-                  opacity: { duration: 2 },
-                  rotate: { duration: 20, repeat: Infinity, repeatType: "reverse" }
-                }}
-                className="absolute top-[20%] right-[10%] w-[600px] h-[400px] border border-white/10 rounded-3xl"
-              ></motion.div>
-              
-              <motion.div
-                initial={{ opacity: 0, rotate: 5 }}
-                animate={{ opacity: 0.1, rotate: -5 }}
-                transition={{ 
-                  opacity: { duration: 2, delay: 0.5 },
-                  rotate: { duration: 25, repeat: Infinity, repeatType: "reverse", delay: 0.5 }
-                }}
-                className="absolute bottom-[20%] left-[10%] w-[500px] h-[300px] border border-[#14A79D]/20 rounded-3xl"
-              ></motion.div>
-              
-              {/* Leuchtende Fokuspunkte */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ 
-                  opacity: [0.2, 0.5, 0.2],
-                  scale: [1, 1.2, 1]
-                }}
-                transition={{ 
-                  duration: 10,
-                  repeat: Infinity,
-                  ease: "easeInOut"
-                }}
-                className="absolute top-[30%] left-[20%] w-32 h-32 rounded-full bg-[#14A79D]/30 blur-3xl"
-              ></motion.div>
-              
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ 
-                  opacity: [0.2, 0.4, 0.2],
-                  scale: [1, 1.1, 1]
-                }}
-                transition={{ 
-                  duration: 8,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: 1
-                }}
-                className="absolute bottom-[35%] right-[15%] w-40 h-40 rounded-full bg-orange-500/20 blur-3xl"
-              ></motion.div>
-            </div>
-            
             {/* Hauptinhalt */}
             <div className="h-full flex items-center justify-center">
               {/* Zentrale Content Box mit Glaseffekt */}
               <motion.div
                 style={{ y: heroTextY, opacity: heroOpacity }}
-                className="max-w-4xl relative z-10 text-center"
+                className="max-w-4xl relative z-10 text-center px-4 md:px-0"
               >
                 {/* Moderne, professionelle Headline */}
                 <div className="mb-10 relative mt-6">
-                  <div className="h-20"></div>
+                  <div className="h-10 md:h-20"></div>
                 </div>
                 
                 {/* Moderne, professionelle Headline */}
-                <div className="mb-10 relative">
-                  {/* Dekorative Linien */}
-                  <motion.div
-                    initial={{ width: 0, opacity: 0 }}
-                    animate={{ width: "25%", opacity: 0.3 }}
-                    transition={{ duration: 1.2, delay: 0.5 }}
-                    className="absolute top-1/2 left-0 h-[1px] bg-gradient-to-r from-[#14A79D] to-transparent"
-                  ></motion.div>
-                  
-                  <motion.div
-                    initial={{ width: 0, opacity: 0 }}
-                    animate={{ width: "25%", opacity: 0.3 }}
-                    transition={{ duration: 1.2, delay: 0.5 }}
-                    className="absolute top-1/2 right-0 h-[1px] bg-gradient-to-l from-[#14A79D] to-transparent"
-                  ></motion.div>
-                  
+                <div className="mb-6 md:mb-10 relative">
                   {/* Hauptüberschrift mit gestaffeltem Reveal-Effekt */}
                   <div className="overflow-hidden mb-2">
                     <motion.div
@@ -338,7 +257,7 @@ const Home = () => {
                       animate={{ y: 0 }}
                       transition={{ duration: 0.7, delay: 0.1 }}
                     >
-                      <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight text-white uppercase">
+                      <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-8xl font-bold tracking-tight text-white uppercase">
                         Luxuriöse
                       </h1>
                     </motion.div>
@@ -350,7 +269,7 @@ const Home = () => {
                       animate={{ y: 0 }}
                       transition={{ duration: 0.7, delay: 0.3 }}
                     >
-                      <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-[#14A79D] via-white to-[#14A79D]">
+                      <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-8xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-[#14A79D] via-white to-[#14A79D]">
                         Fahrerlebnisse
                       </h1>
                     </motion.div>
@@ -362,10 +281,10 @@ const Home = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.8, delay: 0.6 }}
-                  className="relative max-w-2xl mx-auto mb-12"
+                  className="relative max-w-2xl mx-auto mb-8 md:mb-12"
                 >
-                  <div className="px-6">
-                    <p className="text-base sm:text-lg text-gray-300 leading-relaxed font-light">
+                  <div className="px-4 md:px-6">
+                    <p className="text-sm sm:text-base md:text-lg text-gray-300 leading-relaxed font-light">
                       <span className="text-white/90">Premium Autoerlebnis</span> – Einzigartige Fahrzeuge, die höchsten Ansprüchen gerecht werden. <span className="text-[#14A79D]">Autosmaya</span> steht für Exklusivität, Qualität und erstklassigen Service.
                     </p>
                   </div>
@@ -375,11 +294,11 @@ const Home = () => {
                     initial={{ width: 0 }}
                     animate={{ width: "60px" }}
                     transition={{ duration: 1, delay: 0.8 }}
-                    className="mx-auto h-px bg-gradient-to-r from-[#14A79D]/40 via-[#14A79D] to-[#14A79D]/40 my-8"
+                    className="mx-auto h-px bg-gradient-to-r from-[#14A79D]/40 via-[#14A79D] to-[#14A79D]/40 my-6 md:my-8"
                   ></motion.div>
                   
                   {/* Statistiken in horizontaler Reihe - aktualisiert */}
-                  <div className="grid grid-cols-3 gap-6">
+                  <div className="grid grid-cols-3 gap-4 md:gap-6">
                     {[
                       { label: "FAHRZEUGE", value: "150+" },
                       { label: "GARANTIE", value: "12 MO" },
@@ -392,8 +311,8 @@ const Home = () => {
                         transition={{ duration: 0.4, delay: 0.8 + (i * 0.1) }}
                         className="flex flex-col items-center"
                       >
-                        <div className="text-white font-light text-2xl sm:text-3xl tracking-wide">{stat.value}</div>
-                        <div className="text-gray-400 text-xs tracking-[0.2em] mt-2 font-light">{stat.label}</div>
+                        <div className="text-white font-light text-xl sm:text-2xl md:text-3xl tracking-wide">{stat.value}</div>
+                        <div className="text-gray-400 text-[10px] md:text-xs tracking-[0.2em] mt-1 md:mt-2 font-light">{stat.label}</div>
                       </motion.div>
                     ))}
                   </div>
@@ -404,16 +323,16 @@ const Home = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.8, delay: 1 }}
-                  className="flex flex-wrap justify-center gap-6"
+                  className="flex flex-col sm:flex-row justify-center gap-4 md:gap-6 px-4"
                 >
                   <Link
                     to="/showroom"
-                    className="group bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 hover:border-[#14A79D]/30 px-10 py-4 rounded-md transition-all duration-300 overflow-hidden relative"
+                    className="group bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 hover:border-[#14A79D]/30 px-6 md:px-10 py-3 md:py-4 rounded-md transition-all duration-300 overflow-hidden relative w-full sm:w-auto"
                   >
                     {/* Hover-Effekt */}
                     <div className="absolute inset-0 bg-gradient-to-r from-[#14A79D]/0 via-[#14A79D]/20 to-[#14A79D]/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-sm"></div>
                     
-                    <span className="relative z-10 flex items-center justify-center text-white group-hover:text-white tracking-wide font-light">
+                    <span className="relative z-10 flex items-center justify-center text-white group-hover:text-white tracking-wide font-light text-sm md:text-base">
                       <span className="relative mr-2 overflow-hidden flex">
                         <span className="transition-transform duration-500 group-hover:-translate-y-full">KOLLEKTION</span>
                         <span className="absolute inset-0 transition-transform duration-500 translate-y-full group-hover:translate-y-0">ENTDECKEN</span>
@@ -424,12 +343,12 @@ const Home = () => {
                   
                   <Link
                     to="/contact"
-                    className="group bg-[#14A79D] hover:bg-[#14A79D]/90 text-white px-10 py-4 rounded-md transition-all duration-300 overflow-hidden relative"
+                    className="group bg-[#14A79D] hover:bg-[#14A79D]/90 text-white px-6 md:px-10 py-3 md:py-4 rounded-md transition-all duration-300 overflow-hidden relative w-full sm:w-auto"
                   >
                     {/* Shine-Effekt beim Hover */}
                     <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:animate-shine"></div>
                     
-                    <span className="relative z-10 flex items-center justify-center tracking-wide font-light">
+                    <span className="relative z-10 flex items-center justify-center tracking-wide font-light text-sm md:text-base">
                       <span className="mr-2">KONTAKT</span>
                       <Mail className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
                     </span>
@@ -438,8 +357,8 @@ const Home = () => {
               </motion.div>
             </div>
 
-            {/* Moderne Scroll-Indicator mit Kreisen */}
-            <div className="absolute bottom-8 left-1/2 -translate-x-1/2">
+            {/* Moderne Scroll-Indicator mit Kreisen - nur auf Desktop */}
+            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 hidden md:block">
               <motion.div 
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -453,12 +372,12 @@ const Home = () => {
                 }}
               >
                 <div className="flex flex-col items-center gap-1.5">
-                    <motion.div
+                  <motion.div
                     animate={{ y: [0, 6, 0] }}
                     transition={{ repeat: Infinity, duration: 1.5, delay: 0 }}
-                    >
+                  >
                     <div className="w-1.5 h-1.5 rounded-full bg-[#14A79D]"></div>
-                    </motion.div>
+                  </motion.div>
                   <motion.div
                     animate={{ y: [0, 6, 0] }}
                     transition={{ repeat: Infinity, duration: 1.5, delay: 0.2 }}
