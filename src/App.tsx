@@ -22,7 +22,23 @@ function ScrollToTop() {
   const { pathname } = useLocation();
 
   useEffect(() => {
-    window.scrollTo(0, 0);
+    // Sofortiges Scrollen nach oben bei Routenwechsel
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: 'instant' // Instant statt smooth für bessere UX bei Seitenwechsel
+    });
+    
+    // Zusätzliche Sicherheit für dynamische Inhalte
+    const timeoutId = setTimeout(() => {
+      window.scrollTo({
+        top: 0,
+        left: 0,
+        behavior: 'instant'
+      });
+    }, 100);
+
+    return () => clearTimeout(timeoutId);
   }, [pathname]);
 
   return null;
