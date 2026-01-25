@@ -1,378 +1,399 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Phone, Mail, MapPin, Clock, Car as CarIcon, Globe, Navigation2, Apple } from 'lucide-react';
-import { useLocation } from 'react-router-dom';
+import {
+  Phone, Mail, MapPin, Clock, Send, MessageCircle,
+  Sparkles, Navigation, CheckCircle, ArrowUpRight, User
+} from 'lucide-react';
+import { useLocation, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { Car } from '../data/cars';
+
+// Animation variants
+const fadeInUp = {
+  hidden: { opacity: 0, y: 40 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } }
+};
+
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
+};
+
+// GlowCard
+const GlowCard = ({ children, className = "", gradient = "from-[#14A79D]/10" }: any) => (
+  <motion.div
+    whileHover={{ y: -4 }}
+    className={`group relative ${className}`}
+  >
+    <div className={`absolute -inset-px rounded-2xl bg-gradient-to-br ${gradient} to-transparent opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-500`} />
+    <div className="relative h-full rounded-2xl bg-[#0a0a0a] border border-white/[0.04] group-hover:border-white/[0.08] transition-all duration-500 overflow-hidden">
+      {children}
+    </div>
+  </motion.div>
+);
 
 const Contact = () => {
   const location = useLocation();
   const carId = new URLSearchParams(location.search).get('carId');
-  const [selectedCar, setSelectedCar] = useState<Car | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
-
-  useEffect(() => {
-    const fetchCar = async () => {
-      if (!carId) return;
-      
-      setLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('cars')
-          .select('*')
-          .eq('id', carId)
-          .single();
-          
-        if (error) {
-          console.error('Error fetching car:', error);
-          return;
-        }
-          
-        const parsedCar = {
-          ...data,
-          specs: typeof data.specs === 'string' ? JSON.parse(data.specs) : data.specs,
-          condition: typeof data.condition === 'string' ? JSON.parse(data.condition) : data.condition,
-          additionalFeatures: data.additionalfeatures
-        };
-          
-        setSelectedCar(parsedCar);
-      } catch (error) {
-        console.error('Error fetching car:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchCar();
-  }, [carId]);
-
+  const [selectedCar, setSelectedCar] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
     message: '',
-    preferredContact: 'email',
-    preferredTime: '',
     subject: carId ? 'Fahrzeuganfrage' : 'Allgemeine Anfrage',
-    newsletter: false,
     privacy: false
   });
 
   useEffect(() => {
-    if (selectedCar) {
-      setFormData(prevData => ({
-        ...prevData,
-        message: `Ich interessiere mich für den ${selectedCar.brand} ${selectedCar.model} (${selectedCar.year})`,
-        subject: 'Fahrzeuganfrage'
-      }));
+    if (carId) fetchCar();
+  }, [carId]);
+
+  const fetchCar = async () => {
+    setLoading(true);
+    try {
+      const { data } = await supabase.from('cars').select('*').eq('id', carId).single();
+      if (data) {
+        setSelectedCar(data);
+        setFormData(prev => ({
+          ...prev,
+          message: `Ich interessiere mich für den ${data.brand} ${data.model} (${data.year}).\n\nBitte kontaktieren Sie mich für weitere Informationen.`,
+          subject: 'Fahrzeuganfrage'
+        }));
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
-  }, [selectedCar]);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.privacy) {
-      alert('Bitte akzeptieren Sie die Datenschutzerklärung.');
-      return;
-    }
-    console.log('Form submitted:', formData);
+    if (!formData.privacy) return;
+    // Simulate submission
+    setSubmitted(true);
   };
 
-  return (
-    <div className="min-h-screen pt-20 px-4">
-      <div className="max-w-7xl mx-auto">
-        <motion.h1
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-4xl font-bold text-white text-center mb-12"
-        >
-          Kontaktieren Sie uns
-        </motion.h1>
+  const contactMethods = [
+    {
+      icon: Phone,
+      label: 'Telefon',
+      value: '+49 2306 9988585',
+      subtext: 'Mo-Fr 9-19 Uhr',
+      href: 'tel:+4923069988585',
+      gradient: 'from-[#14A79D]'
+    },
+    {
+      icon: Mail,
+      label: 'E-Mail',
+      value: 'kfzhandelsmaya@autosmaya.de',
+      subtext: 'Antwort innerhalb 24h',
+      href: 'mailto:kfzhandelsmaya@autosmaya.de',
+      gradient: 'from-[#EBA530]'
+    },
+    {
+      icon: MapPin,
+      label: 'Standort',
+      value: 'Münsterstraße 207',
+      subtext: '44534 Lünen',
+      href: 'https://maps.app.goo.gl/X5NgfpaNaGw5bscWA',
+      gradient: 'from-purple-500'
+    },
+    {
+      icon: Clock,
+      label: 'Öffnungszeiten',
+      value: 'Mo-Fr: 9-19 Uhr',
+      subtext: 'Sa: 10-18 Uhr',
+      href: null,
+      gradient: 'from-rose-500'
+    },
+  ];
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+  return (
+    <div className="min-h-screen bg-[#050505] pt-28 pb-20">
+      {/* Background */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-[30%] -left-40 w-[500px] h-[500px] bg-[#14A79D]/5 rounded-full blur-[200px]" />
+        <div className="absolute bottom-[30%] -right-40 w-[400px] h-[400px] bg-[#EBA530]/5 rounded-full blur-[200px]" />
+      </div>
+
+      <div className="relative z-10 max-w-[1200px] mx-auto px-6 lg:px-8">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-16"
+        >
           <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="space-y-8"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.1 }}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.03] border border-white/[0.05] mb-6"
           >
-            <div className="bg-[#16181f]/60 backdrop-blur-md rounded-lg p-8">
-              <h2 className="text-2xl font-bold text-white mb-6">
-                Kontaktinformationen
-              </h2>
-              
-              <div className="space-y-6">
-                <div className="flex items-start text-gray-300">
-                  <MapPin className="w-6 h-6 mr-4 text-orange-400 mt-1" />
-                  <div>
-                    <p className="font-semibold">Adresse</p>
-                    <p>Münsterstraße 207</p>
-                    <p>44534 Lünen</p>
-                    <p>Deutschland</p>
-                    <div className="flex gap-2 mt-3">
-                      <a 
-                        href="https://maps.app.goo.gl/X5NgfpaNaGw5bscWA?g_st=com.google.maps.preview.copy"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center bg-[#1a1c25] text-orange-400 px-4 py-2 rounded-full hover:bg-[#1e2029] transition-colors group"
-                      >
-                        <Navigation2 className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
-                        Google Maps
-                      </a>
-                      <a 
-                        href="https://maps.apple.com/?address=Münster%20strasse%20207,%2044534%20Lünen,%20Deutschland&auid=13659803734692933419&ll=51.625382,7.551914&lsp=9902&q=Autosmaya%20Kfz%20Handel&t=m"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center bg-[#1a1c25] text-orange-400 px-4 py-2 rounded-full hover:bg-[#1e2029] transition-colors group"
-                      >
-                        <Apple className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
-                        Apple Maps
-                      </a>
+            <MessageCircle className="w-4 h-4 text-[#14A79D]" />
+            <span className="text-sm text-white/60">Kontakt aufnehmen</span>
+          </motion.div>
+
+          <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">
+            Wir freuen uns <span className="bg-gradient-to-r from-[#14A79D] to-[#EBA530] bg-clip-text text-transparent">auf Sie</span>
+          </h1>
+          <p className="text-lg text-white/40 max-w-xl mx-auto">
+            Haben Sie Fragen oder möchten eine Probefahrt vereinbaren? Wir sind für Sie da.
+          </p>
+        </motion.div>
+
+        {/* Contact Methods */}
+        <motion.div
+          variants={staggerContainer}
+          initial="hidden"
+          animate="visible"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-16"
+        >
+          {contactMethods.map((method, i) => (
+            <motion.div key={method.label} variants={fadeInUp}>
+              {method.href ? (
+                <a
+                  href={method.href}
+                  target={method.label === 'Standort' ? '_blank' : undefined}
+                  rel="noopener noreferrer"
+                >
+                  <GlowCard gradient={`${method.gradient}/10`}>
+                    <div className="p-6">
+                      <div className={`inline-flex p-3 rounded-xl bg-gradient-to-br ${method.gradient}/20 to-transparent mb-4`}>
+                        <method.icon className="w-5 h-5 text-white/80" />
+                      </div>
+                      <div className="text-xs text-white/40 mb-1 uppercase tracking-wider">{method.label}</div>
+                      <div className="text-white font-medium mb-1">{method.value}</div>
+                      <div className="text-sm text-white/40">{method.subtext}</div>
+                    </div>
+                  </GlowCard>
+                </a>
+              ) : (
+                <GlowCard gradient={`${method.gradient}/10`}>
+                  <div className="p-6">
+                    <div className={`inline-flex p-3 rounded-xl bg-gradient-to-br ${method.gradient}/20 to-transparent mb-4`}>
+                      <method.icon className="w-5 h-5 text-white/80" />
+                    </div>
+                    <div className="text-xs text-white/40 mb-1 uppercase tracking-wider">{method.label}</div>
+                    <div className="text-white font-medium mb-1">{method.value}</div>
+                    <div className="text-sm text-white/40">{method.subtext}</div>
+                  </div>
+                </GlowCard>
+              )}
+            </motion.div>
+          ))}
+        </motion.div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+          {/* Form */}
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.3 }}
+            className="lg:col-span-3"
+          >
+            {submitted ? (
+              <GlowCard gradient="from-green-500/10">
+                <div className="p-12 text-center">
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring", stiffness: 200 }}
+                    className="inline-flex p-6 rounded-full bg-green-500/10 mb-6"
+                  >
+                    <CheckCircle className="w-16 h-16 text-green-500" />
+                  </motion.div>
+                  <h3 className="text-2xl font-bold text-white mb-3">Nachricht gesendet!</h3>
+                  <p className="text-white/50 mb-6 max-w-md mx-auto">
+                    Vielen Dank für Ihre Anfrage. Wir melden uns schnellstmöglich bei Ihnen.
+                  </p>
+                  <Link
+                    to="/showroom"
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors"
+                  >
+                    Showroom besuchen
+                    <ArrowUpRight className="w-4 h-4" />
+                  </Link>
+                </div>
+              </GlowCard>
+            ) : (
+              <GlowCard>
+                <form onSubmit={handleSubmit} className="p-8">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
+                    <div>
+                      <label className="block text-xs text-white/40 mb-2 uppercase tracking-wider">Name *</label>
+                      <div className="relative">
+                        <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/20" />
+                        <input
+                          type="text"
+                          required
+                          value={formData.name}
+                          onChange={e => setFormData({ ...formData, name: e.target.value })}
+                          className="w-full pl-12 pr-4 py-4 rounded-xl bg-white/[0.02] border border-white/[0.05] text-white placeholder:text-white/20 focus:outline-none focus:border-[#14A79D]/30 transition-colors"
+                          placeholder="Ihr vollständiger Name"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-white/40 mb-2 uppercase tracking-wider">E-Mail *</label>
+                      <div className="relative">
+                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/20" />
+                        <input
+                          type="email"
+                          required
+                          value={formData.email}
+                          onChange={e => setFormData({ ...formData, email: e.target.value })}
+                          className="w-full pl-12 pr-4 py-4 rounded-xl bg-white/[0.02] border border-white/[0.05] text-white placeholder:text-white/20 focus:outline-none focus:border-[#14A79D]/30 transition-colors"
+                          placeholder="ihre@email.de"
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-                
-                <div className="flex items-center text-gray-300">
-                  <Phone className="w-6 h-6 mr-4 text-orange-400" />
-                  <div>
-                    <p className="font-semibold">Telefon</p>
-                    <p>+49 2306 9988585</p>
-                    <p>+49 176 7036 1769</p>
-                    <p>+49 1515 3366666</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center text-gray-300">
-                  <Mail className="w-6 h-6 mr-4 text-orange-400" />
-                  <div>
-                    <p className="font-semibold">E-Mail</p>
-                    <p>kfzhandelsmaya@autosmaya.info</p>
-                  </div>
-                </div>
 
-                <div className="flex items-start text-gray-300">
-                  <Clock className="w-6 h-6 mr-4 text-orange-400 mt-1" />
-                  <div>
-                    <p className="font-semibold">Öffnungszeiten</p>
-                    <p>Montag - Freitag: 9:00 - 19:00 Uhr</p>
-                    <p>Samstag: 10:00 - 18:00 Uhr</p>
-                    <p>Sonntag & Feiertage: Geschlossen</p>
-                    <p className="text-orange-400 mt-2 text-sm">
-                      Wir beantworten Ihre E-Mails auch außerhalb der Öffnungszeiten!
-                    </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
+                    <div>
+                      <label className="block text-xs text-white/40 mb-2 uppercase tracking-wider">Telefon</label>
+                      <div className="relative">
+                        <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/20" />
+                        <input
+                          type="tel"
+                          value={formData.phone}
+                          onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                          className="w-full pl-12 pr-4 py-4 rounded-xl bg-white/[0.02] border border-white/[0.05] text-white placeholder:text-white/20 focus:outline-none focus:border-[#14A79D]/30 transition-colors"
+                          placeholder="+49 ..."
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-white/40 mb-2 uppercase tracking-wider">Betreff *</label>
+                      <select
+                        required
+                        value={formData.subject}
+                        onChange={e => setFormData({ ...formData, subject: e.target.value })}
+                        className="w-full px-4 py-4 rounded-xl bg-white/[0.02] border border-white/[0.05] text-white focus:outline-none focus:border-[#14A79D]/30 transition-colors"
+                      >
+                        <option value="Fahrzeuganfrage">Fahrzeuganfrage</option>
+                        <option value="Probefahrt">Probefahrt vereinbaren</option>
+                        <option value="Finanzierung">Finanzierungsanfrage</option>
+                        <option value="Allgemeine Anfrage">Allgemeine Anfrage</option>
+                      </select>
+                    </div>
                   </div>
-                </div>
 
-                <div className="flex items-start text-gray-300">
-                  <Globe className="w-6 h-6 mr-4 text-orange-400 mt-1" />
-                  <div>
-                    <p className="font-semibold">Sprachen</p>
-                    <p>Deutsch, English, Français, العربية</p>
+                  <div className="mb-6">
+                    <label className="block text-xs text-white/40 mb-2 uppercase tracking-wider">Nachricht *</label>
+                    <textarea
+                      required
+                      rows={5}
+                      value={formData.message}
+                      onChange={e => setFormData({ ...formData, message: e.target.value })}
+                      className="w-full px-4 py-4 rounded-xl bg-white/[0.02] border border-white/[0.05] text-white placeholder:text-white/20 focus:outline-none focus:border-[#14A79D]/30 transition-colors resize-none"
+                      placeholder="Ihre Nachricht an uns..."
+                    />
                   </div>
-                </div>
-              </div>
-            </div>
 
-            {loading ? (
-              <div className="bg-[#16181f]/60 backdrop-blur-md rounded-lg p-8 flex items-center justify-center">
-                <div className="text-white">Fahrzeugdaten werden geladen...</div>
-              </div>
-            ) : selectedCar && (
-              <div className="bg-[#16181f]/60 backdrop-blur-md rounded-lg p-8">
-                <div className="flex items-center mb-4">
-                  <CarIcon className="w-6 h-6 mr-3 text-orange-400" />
-                  <h3 className="text-xl font-bold text-white">Ausgewähltes Fahrzeug</h3>
-                </div>
-                <div className="space-y-2">
-                  <img
-                    src={selectedCar.images[0]}
-                    alt={`${selectedCar.brand} ${selectedCar.model}`}
-                    className="w-full h-48 object-cover rounded-lg mb-4"
-                  />
-                  <p className="text-xl font-bold text-white">
-                    {selectedCar.brand} {selectedCar.model}
-                  </p>
-                  <p className="text-gray-300">Baujahr: {selectedCar.year}</p>
-                  <p className="text-gray-300">
-                    Kilometerstand: {selectedCar.mileage.toLocaleString()} km
-                  </p>
-                  <p className="text-orange-400 text-xl font-bold">
-                    €{selectedCar.price.toLocaleString()}
-                  </p>
-                </div>
-              </div>
+                  <label className="flex items-start gap-3 mb-8 cursor-pointer group">
+                    <input
+                      type="checkbox"
+                      checked={formData.privacy}
+                      onChange={e => setFormData({ ...formData, privacy: e.target.checked })}
+                      className="mt-1 w-5 h-5 rounded border-white/20 bg-white/5 text-[#14A79D] focus:ring-[#14A79D] focus:ring-offset-0 cursor-pointer"
+                    />
+                    <span className="text-sm text-white/40 group-hover:text-white/60 transition-colors">
+                      Ich habe die <Link to="/legal" className="text-[#14A79D] hover:underline">Datenschutzerklärung</Link> gelesen und stimme dieser zu. *
+                    </span>
+                  </label>
+
+                  <motion.button
+                    type="submit"
+                    disabled={!formData.privacy}
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.99 }}
+                    className="w-full relative flex items-center justify-center gap-3 px-8 py-4 rounded-xl overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed group"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-[#14A79D] to-[#14A79D]/80" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                    <Send className="w-5 h-5 text-white relative z-10" />
+                    <span className="text-white font-semibold relative z-10">Nachricht senden</span>
+                  </motion.button>
+                </form>
+              </GlowCard>
             )}
           </motion.div>
 
+          {/* Sidebar */}
           <motion.div
-            initial={{ opacity: 0, x: 20 }}
+            initial={{ opacity: 0, x: 30 }}
             animate={{ opacity: 1, x: 0 }}
-            className="bg-[#16181f]/60 backdrop-blur-md rounded-lg p-8"
+            transition={{ delay: 0.4 }}
+            className="lg:col-span-2 space-y-6"
           >
-            <h2 className="text-2xl font-bold text-white mb-6">
-              Nachricht senden
-            </h2>
-            
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label htmlFor="name" className="block text-gray-300 mb-2">
-                    Name *
-                  </label>
-                  <input
-                    type="text"
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full bg-gray-800 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400 transition-all duration-300"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label htmlFor="email" className="block text-gray-300 mb-2">
-                    E-Mail *
-                  </label>
-                  <input
-                    type="email"
-                    id="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full bg-gray-800 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400 transition-all duration-300"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label htmlFor="phone" className="block text-gray-300 mb-2">
-                    Telefon
-                  </label>
-                  <input
-                    type="tel"
-                    id="phone"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full bg-gray-800 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400 transition-all duration-300"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="subject" className="block text-gray-300 mb-2">
-                    Betreff *
-                  </label>
-                  <select
-                    id="subject"
-                    value={formData.subject}
-                    onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                    className="w-full bg-gray-800 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400 transition-all duration-300"
-                    required
+            {/* Selected Car */}
+            {selectedCar && (
+              <GlowCard gradient="from-[#14A79D]/10">
+                <div className="p-6">
+                  <div className="flex items-center gap-4 mb-4">
+                    <img
+                      src={selectedCar.images?.[0]}
+                      alt={`${selectedCar.brand} ${selectedCar.model}`}
+                      className="w-20 h-20 rounded-xl object-cover"
+                    />
+                    <div>
+                      <div className="text-xs text-[#14A79D] mb-1 uppercase tracking-wider">Ausgewählt</div>
+                      <div className="text-white font-semibold">{selectedCar.brand} {selectedCar.model}</div>
+                      <div className="text-white/40 text-sm">€{selectedCar.price?.toLocaleString()}</div>
+                    </div>
+                  </div>
+                  <Link
+                    to={`/car/${selectedCar.id}`}
+                    className="inline-flex items-center gap-2 text-[#14A79D] text-sm hover:underline"
                   >
-                    <option value="Fahrzeuganfrage">Fahrzeuganfrage</option>
-                    <option value="Probefahrt">Probefahrt vereinbaren</option>
-                    <option value="Allgemeine Anfrage">Allgemeine Anfrage</option>
-                  </select>
+                    Fahrzeug ansehen <ArrowUpRight className="w-3 h-3" />
+                  </Link>
                 </div>
-              </div>
-              
-              <div>
-                <label htmlFor="message" className="block text-gray-300 mb-2">
-                  Nachricht *
-                </label>
-                <textarea
-                  id="message"
-                  value={formData.message}
-                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                  className="w-full bg-gray-800 text-white rounded-lg px-4 py-2 h-32 resize-none focus:outline-none focus:ring-2 focus:ring-orange-400 transition-all duration-300"
-                  required
+              </GlowCard>
+            )}
+
+            {/* Map */}
+            <GlowCard>
+              <div className="aspect-[4/3] relative">
+                <iframe
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2475.8!2d7.55!3d51.625!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNTHCsDM3JzMwLjAiTiA3wrAzMycwMC4wIkU!5e0!3m2!1sde!2sde!4v1"
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0, filter: 'invert(90%) hue-rotate(180deg) grayscale(30%)' }}
+                  allowFullScreen
+                  loading="lazy"
                 />
-              </div>
-
-              <div>
-                <label className="block text-gray-300 mb-2">
-                  Bevorzugte Kontaktart
-                </label>
-                <div className="flex space-x-4">
-                  <label className="flex items-center text-gray-300">
-                    <input
-                      type="radio"
-                      name="preferredContact"
-                      value="email"
-                      checked={formData.preferredContact === 'email'}
-                      onChange={(e) => setFormData({ ...formData, preferredContact: e.target.value })}
-                      className="mr-2"
-                    />
-                    E-Mail
-                  </label>
-                  <label className="flex items-center text-gray-300">
-                    <input
-                      type="radio"
-                      name="preferredContact"
-                      value="phone"
-                      checked={formData.preferredContact === 'phone'}
-                      onChange={(e) => setFormData({ ...formData, preferredContact: e.target.value })}
-                      className="mr-2"
-                    />
-                    Telefon
-                  </label>
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="preferredTime" className="block text-gray-300 mb-2">
-                  Bevorzugte Kontaktzeit
-                </label>
-                <select
-                  id="preferredTime"
-                  value={formData.preferredTime}
-                  onChange={(e) => setFormData({ ...formData, preferredTime: e.target.value })}
-                  className="w-full bg-gray-800 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                <a
+                  href="https://maps.app.goo.gl/X5NgfpaNaGw5bscWA"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="absolute bottom-4 right-4 inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#14A79D] text-white text-sm font-medium shadow-lg shadow-[#14A79D]/20 hover:bg-[#14A79D]/90 transition-colors"
                 >
-                  <option value="">Beliebig</option>
-                  <option value="morning">Vormittags (9-12 Uhr)</option>
-                  <option value="afternoon">Nachmittags (12-15 Uhr)</option>
-                  <option value="evening">Spätnachmittag (15-18 Uhr)</option>
-                </select>
+                  <Navigation className="w-4 h-4" />
+                  Route planen
+                </a>
               </div>
+            </GlowCard>
 
-              <div className="space-y-4">
-                <label className="flex items-center text-gray-300">
-                  <input
-                    type="checkbox"
-                    checked={formData.newsletter}
-                    onChange={(e) => setFormData({ ...formData, newsletter: e.target.checked })}
-                    className="mr-2"
-                  />
-                  Newsletter abonnieren
-                </label>
-
-                <label className="flex items-center text-gray-300">
-                  <input
-                    type="checkbox"
-                    checked={formData.privacy}
-                    onChange={(e) => setFormData({ ...formData, privacy: e.target.checked })}
-                    className="mr-2"
-                    required
-                  />
-                  Ich habe die <a href="/legal" className="text-orange-400 hover:underline mx-1">Datenschutzerklärung</a> 
-                  gelesen und stimme dieser zu *
-                </label>
-              </div>
-              
-              <div className="mt-8">
-                <motion.button
-                  type="submit"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="w-full bg-gradient-to-r from-orange-500 to-orange-400 text-white py-3 rounded-lg font-medium shadow-lg hover:shadow-orange-500/20 transition-all duration-300"
+            {/* Quick Contact */}
+            <GlowCard gradient="from-[#EBA530]/10">
+              <div className="p-6 text-center">
+                <Sparkles className="w-10 h-10 text-[#EBA530]/60 mx-auto mb-4" />
+                <h3 className="text-white font-semibold mb-2">Schnelle Beratung?</h3>
+                <p className="text-white/40 text-sm mb-4">Rufen Sie uns direkt an</p>
+                <a
+                  href="tel:+4923069988585"
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white/5 border border-white/10 text-white font-medium hover:bg-white/10 transition-colors"
                 >
-                  Nachricht senden
-                </motion.button>
+                  <Phone className="w-4 h-4" />
+                  +49 2306 9988585
+                </a>
               </div>
-
-              <p className="text-gray-400 text-sm text-center">
-                * Pflichtfelder
-              </p>
-            </form>
+            </GlowCard>
           </motion.div>
         </div>
       </div>

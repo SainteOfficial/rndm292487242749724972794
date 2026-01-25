@@ -1,69 +1,60 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
-const carBrands = [
-  'Mercedes-Benz', 'BMW', 'Audi', 'Volkswagen', 'Porsche',
-  'Tesla', 'Toyota', 'Honda', 'Ford', 'Chevrolet',
-  'Lamborghini', 'Ferrari', 'Maserati', 'Bentley', 'Rolls-Royce'
+const brands = [
+  { name: "BMW", logo: "https://www.carlogos.org/car-logos/bmw-logo-2020-blue-white-show.png" },
+  { name: "Mercedes-Benz", logo: "https://www.carlogos.org/logo/Mercedes-Benz-logo-2011-1920x1080.png" },
+  { name: "Audi", logo: "https://www.carlogos.org/car-logos/audi-logo-2016.png" },
+  { name: "Porsche", logo: "https://www.carlogos.org/logo/Porsche-logo-2008-1920x1080.png" },
+  { name: "Tesla", logo: "https://www.carlogos.org/car-logos/tesla-logo-2007.png" },
+  { name: "Volkswagen", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/Volkswagen_logo_2019.svg/2048px-Volkswagen_logo_2019.svg.png" },
+  { name: "Ferrari", logo: "https://www.carlogos.org/car-logos/ferrari-logo-1947.png" },
+  { name: "Lamborghini", logo: "https://www.carlogos.org/car-logos/lamborghini-logo-2014.png" },
 ];
 
-export const MarqueeLogos = () => {
-  return (
-    <div className="relative overflow-hidden py-10 bg-[#16181f]/30">
-      <div className="absolute inset-0 bg-gradient-to-r from-[#13141d] via-transparent to-[#13141d] z-10" />
-      
-      <div className="flex overflow-hidden">
-        <motion.div
-          animate={{
-            x: [0, -2000],
-          }}
-          transition={{
-            x: {
-              repeat: Infinity,
-              repeatType: "loop",
-              duration: 20, // Faster animation
-              ease: "linear",
-            },
-          }}
-          className="flex whitespace-nowrap"
-        >
-          {[...carBrands, ...carBrands].map((brand, index) => (
-            <motion.span
-              key={index}
-              whileHover={{ scale: 1.1 }}
-              className="mx-8 text-white/60 hover:text-white text-xl font-semibold transition-colors cursor-default"
-            >
-              {brand}
-            </motion.span>
-          ))}
-        </motion.div>
+export const MarqueeLogos: React.FC = () => {
+  // Double the brands for seamless loop
+  const allBrands = [...brands, ...brands, ...brands];
 
-        {/* Second row moving in opposite direction */}
-        <motion.div
-          animate={{
-            x: [-2000, 0],
-          }}
-          transition={{
-            x: {
-              repeat: Infinity,
-              repeatType: "loop",
-              duration: 25, // Slightly different speed for visual interest
-              ease: "linear",
-            },
-          }}
-          className="flex whitespace-nowrap"
-        >
-          {[...carBrands, ...carBrands].map((brand, index) => (
-            <motion.span
-              key={index}
-              whileHover={{ scale: 1.1 }}
-              className="mx-8 text-white/60 hover:text-white text-xl font-semibold transition-colors cursor-default"
-            >
-              {brand}
-            </motion.span>
-          ))}
-        </motion.div>
-      </div>
+  return (
+    <div className="relative w-full overflow-hidden py-12">
+      {/* Fade edges */}
+      <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-[#050505] to-transparent z-10 pointer-events-none" />
+      <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-[#050505] to-transparent z-10 pointer-events-none" />
+
+      {/* Marquee Track */}
+      <motion.div
+        className="flex items-center gap-16"
+        animate={{
+          x: ['0%', '-33.33%'],
+        }}
+        transition={{
+          x: {
+            repeat: Infinity,
+            repeatType: 'loop',
+            duration: 30,
+            ease: 'linear',
+          },
+        }}
+      >
+        {allBrands.map((brand, index) => (
+          <div
+            key={`${brand.name}-${index}`}
+            className="flex-shrink-0 group"
+          >
+            <div className="w-24 h-16 flex items-center justify-center opacity-40 grayscale hover:opacity-100 hover:grayscale-0 transition-all duration-500">
+              <img
+                src={brand.logo}
+                alt={brand.name}
+                className="max-w-full max-h-full object-contain"
+                loading="lazy"
+              />
+            </div>
+          </div>
+        ))}
+      </motion.div>
     </div>
   );
 };
+
+export default MarqueeLogos;

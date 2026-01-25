@@ -1,237 +1,252 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Shield, Scale, FileText, Lock } from 'lucide-react';
+import { FileText, Shield, Scale, Mail, Phone, MapPin, ArrowUpRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
+
+// GlowCard
+const GlowCard = ({ children, className = "" }: any) => (
+  <div className={`group relative ${className}`}>
+    <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-[#14A79D]/10 to-transparent opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-500" />
+    <div className="relative h-full rounded-2xl bg-[#0a0a0a] border border-white/[0.04] group-hover:border-white/[0.08] transition-all duration-500 overflow-hidden">
+      {children}
+    </div>
+  </div>
+);
 
 const Legal = () => {
-  return (
-    <div className="min-h-screen pt-20 px-4">
-      <div className="max-w-4xl mx-auto">
-        <motion.h1
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-4xl font-bold text-white text-center mb-12"
-        >
-          Rechtliche Informationen
-        </motion.h1>
+  const sections = [
+    {
+      id: 'impressum',
+      title: 'Impressum',
+      icon: FileText,
+      content: (
+        <div className="space-y-6 text-white/60">
+          <div>
+            <h4 className="text-white font-medium mb-2">Angaben gemäß § 5 TMG</h4>
+            <p>Autosmaya KFZ Handel</p>
+            <p>Münsterstraße 207</p>
+            <p>44534 Lünen</p>
+          </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="bg-gradient-to-br from-[#16181f]/60 to-[#1e2029]/60 backdrop-blur-md rounded-lg p-8 border border-gray-800"
-          >
-            <div className="flex items-center mb-6">
-              <FileText className="w-8 h-8 text-orange-400 mr-3" />
-              <h2 className="text-2xl font-bold text-white">Impressum</h2>
-            </div>
-            <div className="space-y-4">
-              <div className="bg-[#1a1c25]/50 p-4 rounded-lg">
-                <h3 className="font-semibold text-white mb-2">Inhaber</h3>
-                <p className="text-gray-300">Salah-Eddine Khammale</p>
-              </div>
+          <div>
+            <h4 className="text-white font-medium mb-2">Kontakt</h4>
+            <p>Telefon: +49 2306 9988585</p>
+            <p>E-Mail: kfzhandelsmaya@autosmaya.de</p>
+          </div>
 
-              <div className="bg-[#1a1c25]/50 p-4 rounded-lg">
-                <h3 className="font-semibold text-white mb-2">Autosmaya</h3>
-                <p className="text-gray-300">Münsterstraße 207</p>
-                <p className="text-gray-300">44534 Lünen</p>
-                <p className="text-gray-300">Deutschland</p>
-              </div>
+          <div>
+            <h4 className="text-white font-medium mb-2">Umsatzsteuer-ID</h4>
+            <p>Umsatzsteuer-Identifikationsnummer gemäß §27 a Umsatzsteuergesetz: DE XXX XXX XXX</p>
+          </div>
 
-              <div className="bg-[#1a1c25]/50 p-4 rounded-lg">
-                <h3 className="font-semibold text-white mb-2">Kontakt</h3>
-                <p className="text-gray-300">Tel: +49 2306 9988585</p>
-                <p className="text-gray-300">Mobil 1: +49 176 7036 1769</p>
-                <p className="text-gray-300">Mobil 2: +49 1515 3366666</p>
-                <p className="text-gray-300">E-Mail: kfzhandelsmaya@autosmaya.info</p>
-              </div>
-
-              <div className="bg-[#1a1c25]/50 p-4 rounded-lg">
-                <h3 className="font-semibold text-white mb-2">Steuerdaten</h3>
-                <p className="text-gray-300">USt-IdNr.: DE343310818</p>
-                <p className="text-gray-300">Steuernummer: 314/5090/4518</p>
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="bg-gradient-to-br from-[#16181f]/60 to-[#1e2029]/60 backdrop-blur-md rounded-lg p-8 border border-gray-800"
-          >
-            <div className="flex items-center mb-6">
-              <Scale className="w-8 h-8 text-orange-400 mr-3" />
-              <h2 className="text-2xl font-bold text-white">Rechtliches</h2>
-            </div>
-            <div className="space-y-4">
-              <div className="bg-[#1a1c25]/50 p-4 rounded-lg">
-                <h3 className="font-semibold text-white mb-2">Unternehmensform</h3>
-                <p className="text-gray-300">Einzelunternehmen</p>
-              </div>
-              
-              <div className="bg-[#1a1c25]/50 p-4 rounded-lg">
-                <h3 className="font-semibold text-white mb-2">Gewerbe</h3>
-                <p className="text-gray-300">Kraftfahrzeughandel</p>
-                <p className="text-gray-300">Gewerbeanmeldung: Stadt Lünen</p>
-              </div>
-              
-              <div className="bg-[#1a1c25]/50 p-4 rounded-lg">
-                <h3 className="font-semibold text-white mb-2">Kammerzugehörigkeit</h3>
-                <p className="text-gray-300">Industrie- und Handelskammer zu Dortmund</p>
-                <p className="text-gray-300">Märkische Straße 120</p>
-                <p className="text-gray-300">44141 Dortmund</p>
-              </div>
-            </div>
-          </motion.div>
+          <div>
+            <h4 className="text-white font-medium mb-2">Streitschlichtung</h4>
+            <p>Die Europäische Kommission stellt eine Plattform zur Online-Streitbeilegung (OS) bereit:
+              https://ec.europa.eu/consumers/odr/</p>
+            <p className="mt-2">Wir sind nicht bereit oder verpflichtet, an Streitbeilegungsverfahren vor einer
+              Verbraucherschlichtungsstelle teilzunehmen.</p>
+          </div>
         </div>
+      )
+    },
+    {
+      id: 'datenschutz',
+      title: 'Datenschutzerklärung',
+      icon: Shield,
+      content: (
+        <div className="space-y-6 text-white/60">
+          <div>
+            <h4 className="text-white font-medium mb-2">1. Datenschutz auf einen Blick</h4>
+            <p>Die folgenden Hinweise geben einen einfachen Überblick darüber, was mit Ihren personenbezogenen
+              Daten passiert, wenn Sie diese Website besuchen. Personenbezogene Daten sind alle Daten, mit denen
+              Sie persönlich identifiziert werden können.</p>
+          </div>
 
+          <div>
+            <h4 className="text-white font-medium mb-2">2. Datenerfassung auf dieser Website</h4>
+            <p className="mb-2"><strong className="text-white/80">Wer ist verantwortlich für die Datenerfassung?</strong></p>
+            <p>Die Datenverarbeitung auf dieser Website erfolgt durch den Websitebetreiber. Dessen Kontaktdaten
+              können Sie dem Impressum entnehmen.</p>
+
+            <p className="mt-4 mb-2"><strong className="text-white/80">Wie erfassen wir Ihre Daten?</strong></p>
+            <p>Ihre Daten werden zum einen dadurch erhoben, dass Sie uns diese mitteilen. Hierbei kann es sich
+              z.B. um Daten handeln, die Sie in ein Kontaktformular eingeben.</p>
+          </div>
+
+          <div>
+            <h4 className="text-white font-medium mb-2">3. Ihre Rechte</h4>
+            <p>Sie haben jederzeit das Recht, unentgeltlich Auskunft über Herkunft, Empfänger und Zweck Ihrer
+              gespeicherten personenbezogenen Daten zu erhalten. Sie haben außerdem ein Recht, die Berichtigung
+              oder Löschung dieser Daten zu verlangen.</p>
+          </div>
+
+          <div>
+            <h4 className="text-white font-medium mb-2">4. Analyse-Tools</h4>
+            <p>Diese Website nutzt keine Analyse-Tools von Drittanbietern.</p>
+          </div>
+
+          <div>
+            <h4 className="text-white font-medium mb-2">5. Cookies</h4>
+            <p>Diese Website verwendet nur technisch notwendige Cookies, die für den Betrieb der Website
+              erforderlich sind. Sie dienen nicht zu Tracking- oder Werbezwecken.</p>
+          </div>
+        </div>
+      )
+    },
+    {
+      id: 'agb',
+      title: 'Allgemeine Geschäftsbedingungen',
+      icon: Scale,
+      content: (
+        <div className="space-y-6 text-white/60">
+          <div>
+            <h4 className="text-white font-medium mb-2">§ 1 Geltungsbereich</h4>
+            <p>Diese Allgemeinen Geschäftsbedingungen gelten für alle Verträge zwischen Autosmaya KFZ Handel
+              und dem Käufer über den Verkauf von Gebrauchtfahrzeugen.</p>
+          </div>
+
+          <div>
+            <h4 className="text-white font-medium mb-2">§ 2 Vertragsschluss</h4>
+            <p>Der Kaufvertrag kommt durch die beiderseitige Unterzeichnung eines Kaufvertrages oder durch
+              die Übergabe des Fahrzeugs an den Käufer zustande.</p>
+          </div>
+
+          <div>
+            <h4 className="text-white font-medium mb-2">§ 3 Preise und Zahlung</h4>
+            <p>Die angegebenen Preise sind Endpreise inkl. gesetzlicher MwSt. Die Zahlung erfolgt bei
+              Übergabe des Fahrzeugs, sofern nicht anders vereinbart.</p>
+          </div>
+
+          <div>
+            <h4 className="text-white font-medium mb-2">§ 4 Gewährleistung</h4>
+            <p>Bei Gebrauchtfahrzeugen beträgt die Gewährleistungsfrist 12 Monate ab Übergabe. Die
+              Gewährleistung kann auf 24 Monate erweitert werden.</p>
+          </div>
+
+          <div>
+            <h4 className="text-white font-medium mb-2">§ 5 Eigentumsvorbehalt</h4>
+            <p>Das Fahrzeug bleibt bis zur vollständigen Bezahlung Eigentum des Verkäufers.</p>
+          </div>
+
+          <div>
+            <h4 className="text-white font-medium mb-2">§ 6 Haftung</h4>
+            <p>Der Verkäufer haftet für Schäden nur bei Vorsatz oder grober Fahrlässigkeit, es sei denn,
+              es handelt sich um die Verletzung wesentlicher Vertragspflichten.</p>
+          </div>
+        </div>
+      )
+    },
+  ];
+
+  return (
+    <div className="min-h-screen bg-[#050505] pt-28 pb-20">
+      {/* Background */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-[20%] -left-40 w-[500px] h-[500px] bg-[#14A79D]/5 rounded-full blur-[200px]" />
+        <div className="absolute bottom-[20%] -right-40 w-[400px] h-[400px] bg-[#EBA530]/5 rounded-full blur-[200px]" />
+      </div>
+
+      <div className="relative z-10 max-w-[900px] mx-auto px-6 lg:px-8">
+        {/* Header */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-br from-[#16181f]/60 to-[#1e2029]/60 backdrop-blur-md rounded-lg p-8 mb-8 border border-gray-800"
+          className="text-center mb-16"
         >
-          <div className="flex items-center mb-6">
-            <Lock className="w-8 h-8 text-orange-400 mr-3" />
-            <h2 className="text-2xl font-bold text-white">Datenschutzerklärung</h2>
-          </div>
-          <div className="space-y-6">
-            <div className="bg-[#1a1c25]/50 p-6 rounded-lg">
-              <h3 className="text-xl font-semibold text-white mb-4">1. Datenschutz auf einen Blick</h3>
-              <p className="text-gray-300 leading-relaxed">
-                Autosmaya (Inhaber: Salah-Eddine Khammale) nimmt den Schutz Ihrer persönlichen Daten sehr ernst. 
-                Wir behandeln Ihre personenbezogenen Daten vertraulich und entsprechend der EU-Datenschutz-Grundverordnung (DSGVO) 
-                sowie dieser Datenschutzerklärung.
-              </p>
-            </div>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.1 }}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.03] border border-white/[0.05] mb-6"
+          >
+            <FileText className="w-4 h-4 text-[#14A79D]" />
+            <span className="text-sm text-white/60">Rechtliches</span>
+          </motion.div>
 
-            <div className="bg-[#1a1c25]/50 p-6 rounded-lg">
-              <h3 className="text-xl font-semibold text-white mb-4">2. Datenerfassung auf unserer Website</h3>
-              <div className="space-y-4">
-                <div>
-                  <h4 className="text-lg font-medium text-white mb-2">Cookies und Analyse-Tools</h4>
-                  <p className="text-gray-300 leading-relaxed">
-                    Unsere Website verwendet Cookies. Dies sind kleine Textdateien, die Ihr 
-                    Webbrowser auf Ihrem Endgerät speichert. Die meisten der von uns verwendeten 
-                    Cookies sind sogenannte "Session-Cookies", die nach Ende Ihres Besuchs 
-                    automatisch gelöscht werden. Andere Cookies bleiben auf Ihrem Endgerät gespeichert, 
-                    bis Sie diese löschen oder die Speicherdauer abläuft.
-                  </p>
-                </div>
-                <div>
-                  <h4 className="text-lg font-medium text-white mb-2">Server-Log-Dateien</h4>
-                  <p className="text-gray-300 leading-relaxed">
-                    Der Provider speichert automatisch Informationen in Server-Log-Dateien, die Ihr Browser 
-                    automatisch übermittelt. Dies sind: Browsertyp und -version, verwendetes Betriebssystem, 
-                    Referrer URL, Hostname des zugreifenden Rechners, Uhrzeit der Serveranfrage, IP-Adresse. 
-                    Diese Daten werden nicht mit anderen Datenquellen zusammengeführt.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-[#1a1c25]/50 p-6 rounded-lg">
-              <h3 className="text-xl font-semibold text-white mb-4">3. Ihre Rechte</h3>
-              <p className="text-gray-300 leading-relaxed">
-                Sie haben folgende Rechte hinsichtlich Ihrer personenbezogenen Daten:
-              </p>
-              <ul className="list-disc list-inside text-gray-300 leading-relaxed mt-2 space-y-2">
-                <li>Recht auf Auskunft</li>
-                <li>Recht auf Berichtigung oder Löschung</li>
-                <li>Recht auf Einschränkung der Verarbeitung</li>
-                <li>Recht auf Widerspruch gegen die Verarbeitung</li>
-                <li>Recht auf Datenübertragbarkeit</li>
-              </ul>
-            </div>
-
-            <div className="bg-[#1a1c25]/50 p-6 rounded-lg">
-              <h3 className="text-xl font-semibold text-white mb-4">4. Kontaktformular und Kommunikation</h3>
-              <p className="text-gray-300 leading-relaxed">
-                Wenn Sie uns kontaktieren (z.B. per Kontaktformular, E-Mail, Telefon), werden Ihre Angaben 
-                zur Bearbeitung der Anfrage und für den Fall von Anschlussfragen bei uns gespeichert. 
-                Diese Daten geben wir nicht ohne Ihre Einwilligung weiter. Die Verarbeitung erfolgt auf 
-                Grundlage von Art. 6 Abs. 1 lit. b DSGVO.
-              </p>
-            </div>
-          </div>
+          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+            Rechtliche Informationen
+          </h1>
+          <p className="text-lg text-white/40 max-w-xl mx-auto">
+            Impressum, Datenschutz und AGB
+          </p>
         </motion.div>
 
+        {/* Quick Navigation */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-br from-[#16181f]/60 to-[#1e2029]/60 backdrop-blur-md rounded-lg p-8 border border-gray-800"
+          transition={{ delay: 0.2 }}
+          className="flex flex-wrap justify-center gap-3 mb-12"
         >
-          <div className="flex items-center mb-6">
-            <Shield className="w-8 h-8 text-orange-400 mr-3" />
-            <h2 className="text-2xl font-bold text-white">AGB</h2>
-          </div>
-          <div className="space-y-6">
-            <div className="bg-[#1a1c25]/50 p-6 rounded-lg">
-              <h3 className="text-xl font-semibold text-white mb-4">§1 Geltungsbereich</h3>
-              <p className="text-gray-300 leading-relaxed">
-                Diese Allgemeinen Geschäftsbedingungen gelten für alle Geschäftsbeziehungen zwischen 
-                Autosmaya (Inhaber: Salah-Eddine Khammale) und unseren Kunden. Maßgeblich ist die 
-                jeweils zum Zeitpunkt des Vertragsschlusses gültige Fassung.
-              </p>
-            </div>
+          {sections.map((section) => (
+            <a
+              key={section.id}
+              href={`#${section.id}`}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/[0.02] border border-white/[0.05] text-white/50 hover:text-white hover:border-white/10 transition-all"
+            >
+              <section.icon className="w-4 h-4" />
+              {section.title}
+            </a>
+          ))}
+        </motion.div>
 
-            <div className="bg-[#1a1c25]/50 p-6 rounded-lg">
-              <h3 className="text-xl font-semibold text-white mb-4">§2 Vertragsschluss und Angebot</h3>
-              <p className="text-gray-300 leading-relaxed">
-                Unsere Angebote sind freibleibend und unverbindlich. Technische und sonstige Änderungen 
-                in Form, Farbe, Gewicht oder Design bleiben im Rahmen des Zumutbaren vorbehalten. 
-                Der Kaufvertrag kommt erst durch unsere schriftliche Auftragsbestätigung oder durch 
-                Übergabe der Ware zustande.
-              </p>
-            </div>
+        {/* Sections */}
+        <div className="space-y-8">
+          {sections.map((section, i) => (
+            <motion.div
+              key={section.id}
+              id={section.id}
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 * i + 0.3 }}
+            >
+              <GlowCard>
+                <div className="p-8">
+                  <div className="flex items-center gap-3 mb-6 pb-6 border-b border-white/[0.05]">
+                    <div className="p-3 rounded-xl bg-gradient-to-br from-[#14A79D]/20 to-transparent">
+                      <section.icon className="w-6 h-6 text-[#14A79D]" />
+                    </div>
+                    <h2 className="text-xl font-semibold text-white">{section.title}</h2>
+                  </div>
 
-            <div className="bg-[#1a1c25]/50 p-6 rounded-lg">
-              <h3 className="text-xl font-semibold text-white mb-4">§3 Preise und Zahlung</h3>
-              <p className="text-gray-300 leading-relaxed">
-                Alle Preise verstehen sich in Euro inklusive der gesetzlichen Mehrwertsteuer. 
-                Der Kaufpreis ist bei Übergabe des Fahrzeugs fällig. Die Übergabe erfolgt nur gegen 
-                vollständige Zahlung des Kaufpreises oder nach schriftlicher Finanzierungsbestätigung.
-              </p>
-            </div>
+                  {section.content}
+                </div>
+              </GlowCard>
+            </motion.div>
+          ))}
+        </div>
 
-            <div className="bg-[#1a1c25]/50 p-6 rounded-lg">
-              <h3 className="text-xl font-semibold text-white mb-4">§4 Gewährleistung und Garantie</h3>
-              <p className="text-gray-300 leading-relaxed">
-                Bei gebrauchten Fahrzeugen verjähren die Ansprüche des Käufers wegen Mängeln in einem Jahr 
-                ab Übergabe. Die Verkürzung der Verjährungsfrist gilt nicht für Schadensersatzansprüche 
-                aus grob fahrlässiger oder vorsätzlicher Pflichtverletzung. Garantien im Rechtssinne 
-                erhält der Kunde durch uns nicht, sofern nicht ausdrücklich schriftlich vereinbart.
+        {/* Contact CTA */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+          className="mt-16"
+        >
+          <GlowCard gradient="from-[#14A79D]/10">
+            <div className="p-8 text-center">
+              <h3 className="text-xl font-bold text-white mb-3">Fragen zu unseren Richtlinien?</h3>
+              <p className="text-white/40 mb-6">
+                Kontaktieren Sie uns gerne bei Fragen zu unseren rechtlichen Informationen.
               </p>
+              <div className="flex flex-wrap justify-center gap-4">
+                <a
+                  href="mailto:kfzhandelsmaya@autosmaya.de"
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#14A79D] text-white font-medium"
+                >
+                  <Mail className="w-4 h-4" />
+                  E-Mail senden
+                </a>
+                <a
+                  href="tel:+4923069988585"
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white/5 border border-white/10 text-white"
+                >
+                  <Phone className="w-4 h-4" />
+                  Anrufen
+                </a>
+              </div>
             </div>
-
-            <div className="bg-[#1a1c25]/50 p-6 rounded-lg">
-              <h3 className="text-xl font-semibold text-white mb-4">§5 Eigentumsvorbehalt</h3>
-              <p className="text-gray-300 leading-relaxed">
-                Das Fahrzeug bleibt bis zur vollständigen Bezahlung unser Eigentum. Während der Dauer 
-                des Eigentumsvorbehalts steht das Recht zum Besitz des Fahrzeugbriefes uns zu. 
-                Bei Zugriffen Dritter auf die Vorbehaltsware wird der Käufer auf unser Eigentum hinweisen 
-                und uns unverzüglich benachrichtigen.
-              </p>
-            </div>
-
-            <div className="bg-[#1a1c25]/50 p-6 rounded-lg">
-              <h3 className="text-xl font-semibold text-white mb-4">§6 Probefahrten</h3>
-              <p className="text-gray-300 leading-relaxed">
-                Für Probefahrten ist ein gültiger Führerschein und Personalausweis vorzulegen. 
-                Der Kunde haftet für Schäden, die während der Probefahrt am Fahrzeug entstehen, 
-                soweit diese von ihm zu vertreten sind. Der Kunde hat das Fahrzeug pfleglich zu 
-                behandeln und alle für die Benutzung maßgeblichen Vorschriften zu beachten.
-              </p>
-            </div>
-
-            <div className="bg-[#1a1c25]/50 p-6 rounded-lg">
-              <h3 className="text-xl font-semibold text-white mb-4">§7 Schlussbestimmungen</h3>
-              <p className="text-gray-300 leading-relaxed">
-                Es gilt das Recht der Bundesrepublik Deutschland. Erfüllungsort ist Lünen. 
-                Gerichtsstand für alle Streitigkeiten aus diesem Vertrag ist, soweit gesetzlich zulässig, 
-                Lünen. Sollten einzelne Bestimmungen unwirksam sein, bleibt die Wirksamkeit der übrigen 
-                Bestimmungen unberührt.
-              </p>
-            </div>
-          </div>
+          </GlowCard>
         </motion.div>
       </div>
     </div>
