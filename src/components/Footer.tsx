@@ -287,6 +287,14 @@ const Footer = () => {
                 Mobile.de
                 <ExternalLink className="w-3 h-3" />
               </a>
+              <a
+                href="https://ki-helpbot.de"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-white/50 transition-colors"
+              >
+                Made by Souhail
+              </a>
             </div>
           </div>
         </div>
