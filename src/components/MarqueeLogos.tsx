@@ -2,14 +2,14 @@ import React from 'react';
 import { motion } from 'framer-motion';
 
 const brands = [
-  { name: "BMW", logo: "https://www.carlogos.org/car-logos/bmw-logo-2020-blue-white-show.png" },
-  { name: "Mercedes-Benz", logo: "https://www.carlogos.org/logo/Mercedes-Benz-logo-2011-1920x1080.png" },
-  { name: "Audi", logo: "https://www.carlogos.org/car-logos/audi-logo-2016.png" },
-  { name: "Porsche", logo: "https://www.carlogos.org/logo/Porsche-logo-2008-1920x1080.png" },
-  { name: "Tesla", logo: "https://www.carlogos.org/car-logos/tesla-logo-2007.png" },
-  { name: "Volkswagen", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/Volkswagen_logo_2019.svg/2048px-Volkswagen_logo_2019.svg.png" },
-  { name: "Ferrari", logo: "https://www.carlogos.org/car-logos/ferrari-logo-1947.png" },
-  { name: "Lamborghini", logo: "https://www.carlogos.org/car-logos/lamborghini-logo-2014.png" },
+  { name: "BMW", logo: "https://cdn.simpleicons.org/bmw/white" },
+  { name: "Mercedes-Benz", logo: "https://cdn.simpleicons.org/mercedes/white" },
+  { name: "Audi", logo: "https://cdn.simpleicons.org/audi/white" },
+  { name: "Porsche", logo: "https://cdn.simpleicons.org/porsche/white" },
+  { name: "Tesla", logo: "https://cdn.simpleicons.org/tesla/white" },
+  { name: "Volkswagen", logo: "https://cdn.simpleicons.org/volkswagen/white" },
+  { name: "Ferrari", logo: "https://cdn.simpleicons.org/ferrari/white" },
+  { name: "Lamborghini", logo: "https://cdn.simpleicons.org/lamborghini/white" },
 ];
 
 export const MarqueeLogos: React.FC = () => {
