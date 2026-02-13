@@ -1,168 +1,109 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Images, X, ChevronLeft, ChevronRight, ZoomIn, ArrowUpRight, Download } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence, useInView } from 'framer-motion';
+import { X, ChevronLeft, ChevronRight, ZoomIn } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { Link } from 'react-router-dom';
+
+const Section = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: '-60px' });
+  return (
+    <motion.div ref={ref} initial={{ opacity: 0, y: 30 }} animate={inView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }} className={className}>
+      {children}
+    </motion.div>
+  );
+};
+
+interface GalleryImage { url: string; brand: string; model: string; }
 
 const Gallery = () => {
-  const [cars, setCars] = useState<any[]>([]);
+  const [images, setImages] = useState<GalleryImage[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedImage, setSelectedImage] = useState<{ url: string; car: any; index: number } | null>(null);
-  const [filter, setFilter] = useState('all');
+  const [selectedBrand, setSelectedBrand] = useState('');
+  const [lightbox, setLightbox] = useState<{ open: boolean; index: number }>({ open: false, index: 0 });
 
   useEffect(() => {
-    fetchCars();
+    (async () => {
+      try {
+        const { data } = await supabase.from('cars').select('images, brand, model').eq('status', 'available');
+        if (data) {
+          const all: GalleryImage[] = [];
+          data.forEach(car => {
+            (car.images || []).forEach((url: string) => all.push({ url, brand: car.brand, model: car.model }));
+          });
+          setImages(all);
+        }
+      } catch (e) { console.error(e); }
+      finally { setLoading(false); }
+    })();
   }, []);
 
-  const fetchCars = async () => {
-    try {
-      const { data } = await supabase
-        .from('cars')
-        .select('*')
-        .eq('status', 'available')
-        .order('created_at', { ascending: false });
-
-      if (data) setCars(data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Get unique brands
-  const brands = ['all', ...new Set(cars.map(car => car.brand))];
-
-  // Flatten images with car info
-  const allImages = cars
-    .filter(car => filter === 'all' || car.brand === filter)
-    .flatMap(car =>
-      (car.images || []).map((url: string, idx: number) => ({
-        url,
-        car,
-        index: idx
-      }))
-    );
-
-  const navigateImage = (direction: 'prev' | 'next') => {
-    if (!selectedImage) return;
-    const currentIdx = allImages.findIndex(img => img.url === selectedImage.url);
-    const newIdx = direction === 'next'
-      ? (currentIdx + 1) % allImages.length
-      : (currentIdx - 1 + allImages.length) % allImages.length;
-    setSelectedImage(allImages[newIdx]);
-  };
-
-  // Keyboard navigation
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!selectedImage) return;
-      if (e.key === 'ArrowLeft') navigateImage('prev');
-      if (e.key === 'ArrowRight') navigateImage('next');
-      if (e.key === 'Escape') setSelectedImage(null);
+    if (!lightbox.open) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setLightbox({ open: false, index: 0 });
+      if (e.key === 'ArrowLeft') setLightbox(p => ({ ...p, index: p.index === 0 ? filtered.length - 1 : p.index - 1 }));
+      if (e.key === 'ArrowRight') setLightbox(p => ({ ...p, index: p.index === filtered.length - 1 ? 0 : p.index + 1 }));
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedImage, allImages]);
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [lightbox.open]);
+
+  const brands = [...new Set(images.map(i => i.brand))].sort();
+  const filtered = selectedBrand ? images.filter(i => i.brand === selectedBrand) : images;
 
   return (
-    <div className="min-h-screen bg-[#050505] pt-28 pb-20">
-      {/* Background */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-[20%] -left-40 w-[500px] h-[500px] bg-[#14A79D]/5 rounded-full blur-[200px]" />
-        <div className="absolute bottom-[20%] -right-40 w-[400px] h-[400px] bg-[#EBA530]/5 rounded-full blur-[200px]" />
-      </div>
-
-      <div className="relative z-10 max-w-[1400px] mx-auto px-6 lg:px-8">
+    <div className="min-h-screen bg-[#050505] pt-24 pb-20">
+      <div className="max-w-[1400px] mx-auto px-6 md:px-16 lg:px-24 pt-8">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-12"
-        >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.1 }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.03] border border-white/[0.05] mb-6"
-          >
-            <Images className="w-4 h-4 text-[#14A79D]" />
-            <span className="text-sm text-white/60">Bildergalerie</span>
-          </motion.div>
-
-          <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">
-            Unsere <span className="bg-gradient-to-r from-[#14A79D] to-[#EBA530] bg-clip-text text-transparent">Fahrzeuge</span>
+        <Section>
+          <p className="text-[#14A79D] text-xs font-medium tracking-[0.2em] uppercase mb-3">Galerie</p>
+          <h1 className="text-3xl md:text-5xl font-display font-bold text-white tracking-tight mb-4">
+            Unsere Fahrzeuge
           </h1>
-          <p className="text-lg text-white/40 max-w-xl mx-auto">
-            {allImages.length} hochauflösende Bilder unserer Premium-Automobile
-          </p>
-        </motion.div>
+          <p className="text-white/35 text-base mb-10">Einblicke in unser aktuelles Premium-Sortiment.</p>
 
-        {/* Filter Tabs */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="flex flex-wrap justify-center gap-2 mb-12"
-        >
-          {brands.map((brand) => (
-            <button
-              key={brand}
-              onClick={() => setFilter(brand)}
-              className={`px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-300 ${filter === brand
-                  ? 'bg-[#14A79D] text-white shadow-lg shadow-[#14A79D]/20'
-                  : 'bg-white/[0.02] border border-white/[0.05] text-white/50 hover:text-white hover:border-white/10'
-                }`}
-            >
-              {brand === 'all' ? 'Alle Marken' : brand}
+          {/* Brand filter pills */}
+          <div className="flex flex-wrap gap-2 mb-10">
+            <button onClick={() => setSelectedBrand('')}
+              className={`px-4 py-2 rounded-full text-sm transition-all duration-300 ${!selectedBrand ? 'bg-white text-black' : 'bg-white/[0.04] text-white/50 hover:text-white'}`}>
+              Alle
             </button>
-          ))}
-        </motion.div>
+            {brands.map(b => (
+              <button key={b} onClick={() => setSelectedBrand(b)}
+                className={`px-4 py-2 rounded-full text-sm transition-all duration-300 ${selectedBrand === b ? 'bg-white text-black' : 'bg-white/[0.04] text-white/50 hover:text-white'}`}>
+                {b}
+              </button>
+            ))}
+          </div>
+        </Section>
 
-        {/* Gallery Grid */}
+        {/* Grid */}
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-32">
-            <div className="w-16 h-16 border-2 border-[#14A79D]/20 border-t-[#14A79D] rounded-full animate-spin mb-4" />
-            <p className="text-white/40">Bilder werden geladen...</p>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+            {[...Array(12)].map((_, i) => <div key={i} className="skeleton aspect-square rounded-xl" />)}
           </div>
         ) : (
-          <motion.div
-            layout
-            className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4"
-          >
+          <motion.div layout className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
             <AnimatePresence mode="popLayout">
-              {allImages.slice(0, 24).map((image, i) => (
+              {filtered.map((img, i) => (
                 <motion.div
-                  key={`${image.car.id}-${image.index}`}
-                  layout
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  transition={{ duration: 0.3, delay: i * 0.02 }}
-                  whileHover={{ scale: 1.02 }}
-                  className="group relative aspect-square rounded-2xl overflow-hidden cursor-pointer bg-[#0a0a0a] border border-white/[0.03]"
-                  onClick={() => setSelectedImage(image)}
+                  key={img.url} layout
+                  initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.4, delay: i < 12 ? i * 0.03 : 0, ease: [0.22, 1, 0.36, 1] }}
+                  className={`group relative overflow-hidden rounded-xl cursor-pointer bg-[#0a0a0a] border border-white/[0.03] ${i % 5 === 0 ? 'md:col-span-2 md:row-span-2' : ''
+                    }`}
+                  style={{ aspectRatio: i % 5 === 0 ? '1' : '1' }}
+                  onClick={() => setLightbox({ open: true, index: i })}
                 >
-                  <img
-                    src={image.url}
-                    alt={`${image.car.brand} ${image.car.model}`}
-                    className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110"
-                    loading="lazy"
-                  />
-
-                  {/* Hover Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300">
-                    {/* Car Info */}
-                    <div className="absolute bottom-0 left-0 right-0 p-4">
-                      <p className="text-white font-semibold mb-1">
-                        {image.car.brand} {image.car.model}
-                      </p>
-                      <p className="text-white/50 text-sm">{image.car.year} • €{image.car.price?.toLocaleString()}</p>
-                    </div>
-
-                    {/* Zoom Icon */}
-                    <div className="absolute top-4 right-4 p-2.5 rounded-full bg-white/10 backdrop-blur-md">
-                      <ZoomIn className="w-5 h-5 text-white" />
+                  <img src={img.url} alt={`${img.brand} ${img.model}`}
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between">
+                      <div>
+                        <p className="text-white text-sm font-display font-semibold">{img.brand} {img.model}</p>
+                      </div>
+                      <ZoomIn className="w-4 h-4 text-white/60" />
                     </div>
                   </div>
                 </motion.div>
@@ -170,114 +111,36 @@ const Gallery = () => {
             </AnimatePresence>
           </motion.div>
         )}
-
-        {/* View More CTA */}
-        {allImages.length > 24 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="text-center mt-12"
-          >
-            <p className="text-white/40 mb-4">
-              Zeige 24 von {allImages.length} Bildern
-            </p>
-            <Link
-              to="/showroom"
-              className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-white/5 border border-white/10 text-white font-medium hover:bg-white/10 transition-colors"
-            >
-              Alle Fahrzeuge im Showroom
-              <ArrowUpRight className="w-4 h-4" />
-            </Link>
-          </motion.div>
-        )}
       </div>
 
       {/* Lightbox */}
       <AnimatePresence>
-        {selectedImage && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="fixed inset-0 z-50 flex items-center justify-center"
-            onClick={() => setSelectedImage(null)}
-          >
-            {/* Backdrop */}
-            <div className="absolute inset-0 bg-black/95 backdrop-blur-2xl" />
-
-            {/* Close Button */}
-            <button
-              onClick={() => setSelectedImage(null)}
-              className="absolute top-6 right-6 z-50 p-3 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
-            >
-              <X className="w-6 h-6 text-white" />
-            </button>
-
-            {/* Image Counter */}
-            <div className="absolute top-6 left-6 z-50 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-white/60 text-sm">
-              {allImages.findIndex(img => img.url === selectedImage.url) + 1} / {allImages.length}
+        {lightbox.open && filtered[lightbox.index] && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}
+            className="fixed inset-0 z-50 bg-black/95 backdrop-blur-xl flex items-center justify-center" onClick={() => setLightbox({ open: false, index: 0 })}>
+            <button className="absolute top-6 right-6 p-2 text-white/60 hover:text-white transition-colors z-10"><X className="w-6 h-6" /></button>
+            {filtered.length > 1 && (
+              <>
+                <button onClick={e => { e.stopPropagation(); setLightbox(p => ({ ...p, index: p.index === 0 ? filtered.length - 1 : p.index - 1 })); }}
+                  className="absolute left-4 md:left-8 p-3 rounded-full bg-white/5 text-white/70 hover:text-white transition-colors z-10">
+                  <ChevronLeft className="w-6 h-6" />
+                </button>
+                <button onClick={e => { e.stopPropagation(); setLightbox(p => ({ ...p, index: p.index === filtered.length - 1 ? 0 : p.index + 1 })); }}
+                  className="absolute right-4 md:right-8 p-3 rounded-full bg-white/5 text-white/70 hover:text-white transition-colors z-10">
+                  <ChevronRight className="w-6 h-6" />
+                </button>
+              </>
+            )}
+            <AnimatePresence mode="wait">
+              <motion.img key={lightbox.index} src={filtered[lightbox.index].url} alt="" onClick={e => e.stopPropagation()}
+                className="max-w-[90vw] max-h-[85vh] object-contain rounded-xl"
+                initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.3 }} />
+            </AnimatePresence>
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-center">
+              <p className="text-white/70 text-sm font-display">{filtered[lightbox.index].brand} {filtered[lightbox.index].model}</p>
+              <p className="text-white/30 text-xs mt-1">{lightbox.index + 1} / {filtered.length}</p>
             </div>
-
-            {/* Navigation */}
-            <button
-              onClick={(e) => { e.stopPropagation(); navigateImage('prev'); }}
-              className="absolute left-4 md:left-8 z-50 p-4 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
-            >
-              <ChevronLeft className="w-6 h-6 text-white" />
-            </button>
-
-            <button
-              onClick={(e) => { e.stopPropagation(); navigateImage('next'); }}
-              className="absolute right-4 md:right-8 z-50 p-4 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
-            >
-              <ChevronRight className="w-6 h-6 text-white" />
-            </button>
-
-            {/* Image */}
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className="relative max-w-6xl max-h-[85vh] px-4 z-40"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <img
-                src={selectedImage.url}
-                alt={`${selectedImage.car.brand} ${selectedImage.car.model}`}
-                className="max-w-full max-h-[75vh] object-contain rounded-2xl shadow-2xl"
-              />
-
-              {/* Info Bar */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl bg-white/[0.02] border border-white/[0.05]"
-              >
-                <div>
-                  <h3 className="text-xl font-semibold text-white">
-                    {selectedImage.car.brand} {selectedImage.car.model}
-                  </h3>
-                  <p className="text-white/50">
-                    {selectedImage.car.year} • €{selectedImage.car.price?.toLocaleString()}
-                  </p>
-                </div>
-
-                <div className="flex gap-3">
-                  <Link
-                    to={`/car/${selectedImage.car.id}`}
-                    onClick={(e) => e.stopPropagation()}
-                    className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#14A79D] text-white font-medium hover:bg-[#14A79D]/90 transition-colors"
-                  >
-                    Fahrzeug ansehen
-                    <ArrowUpRight className="w-4 h-4" />
-                  </Link>
-                </div>
-              </motion.div>
-            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

@@ -1,134 +1,213 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowRight, ChevronDown, Phone, Settings } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Phone, Sparkles } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
-const images = [
-    "https://images.unsplash.com/photo-1603584173870-7f23fdae1b7a?q=80&w=2560", // Audi GT
-    "https://images.unsplash.com/photo-1555215695-3004980ad54e?q=80&w=2560", // BMW M
-    "https://images.unsplash.com/photo-1503376763036-066120622c74?q=80&w=2560", // Porsche
-    "https://images.unsplash.com/photo-1617788138017-80ad40651399?q=80&w=2560", // Mercedes
+const fallbackSlides = [
+    { kicker: 'Premium Automobile', headline: 'Exzellenz\nerleben.', subtitle: 'Handverlesene Fahrzeuge für höchste Ansprüche — TÜV-geprüft mit Garantie.' },
+    { kicker: 'Luxus & Performance', headline: 'Ihr Traum\nwartet.', subtitle: 'BMW, Mercedes, Audi, Porsche und mehr — alle in bestem Zustand.' },
+    { kicker: 'Vertrauen & Qualität', headline: 'Drive\nExcellence.', subtitle: 'Über 500 zufriedene Kunden und 5+ Jahre Erfahrung im Premium-Segment.' },
+    { kicker: 'Autosmaya', headline: 'Premium\nSeit Tag 1.', subtitle: 'Finanzierung, Versicherung und Zulassung — alles aus einer Hand.' },
 ];
 
-export const Hero = () => {
-    const [index, setIndex] = useState(0);
+const Hero = () => {
+    const [current, setCurrent] = useState(0);
+    const [heroImages, setHeroImages] = useState<string[]>([]);
+    const [imagesLoaded, setImagesLoaded] = useState<boolean[]>([]);
 
+    // Fetch car images from Supabase to use as hero backgrounds
     useEffect(() => {
-        const timer = setInterval(() => {
-            setIndex((prev) => (prev + 1) % images.length);
-        }, 6000); // Change image every 6 seconds
-        return () => clearInterval(timer);
+        (async () => {
+            try {
+                const { data } = await supabase
+                    .from('cars')
+                    .select('images')
+                    .eq('status', 'available')
+                    .order('created_at', { ascending: false })
+                    .limit(8);
+                if (data) {
+                    const imgs = data
+                        .filter(c => c.images && c.images.length > 0)
+                        .map(c => c.images[0])
+                        .slice(0, 4);
+                    if (imgs.length > 0) {
+                        setHeroImages(imgs);
+                        setImagesLoaded(new Array(imgs.length).fill(false));
+                        // Preload images
+                        imgs.forEach((src, i) => {
+                            const img = new Image();
+                            img.onload = () => setImagesLoaded(prev => { const n = [...prev]; n[i] = true; return n; });
+                            img.src = src;
+                        });
+                    }
+                }
+            } catch (e) { console.error(e); }
+        })();
     }, []);
 
+    const slides = fallbackSlides.slice(0, Math.max(heroImages.length, 1));
+
+    const goTo = useCallback((idx: number) => {
+        setCurrent(idx);
+    }, []);
+
+    useEffect(() => {
+        if (heroImages.length === 0) return;
+        const timer = setInterval(() => {
+            setCurrent(p => (p + 1) % slides.length);
+        }, 6000);
+        return () => clearInterval(timer);
+    }, [heroImages.length, slides.length]);
+
+    const slide = fallbackSlides[current % fallbackSlides.length];
+    const currentImage = heroImages[current % heroImages.length];
+
     return (
-        <section className="relative h-screen min-h-[700px] w-full overflow-hidden bg-[#050505]">
-            {/* Background Slider with Ken Burns Effect */}
-            <AnimatePresence mode="popLayout" initial={false}>
-                <motion.div
-                    key={index}
-                    initial={{ opacity: 0, scale: 1.1 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 1.5, ease: "easeInOut" }} // Smooth Crossfade
-                    className="absolute inset-0 z-0"
-                >
+        <section className="relative h-screen w-full overflow-hidden bg-black">
+            {/* Background images with Ken Burns zoom */}
+            <AnimatePresence mode="sync">
+                {currentImage && (
                     <motion.div
-                        initial={{ scale: 1 }}
-                        animate={{ scale: 1.1 }}
-                        transition={{ duration: 10, ease: "linear" }} // Slow Zoom (Ken Burns)
-                        className="w-full h-full"
+                        key={current}
+                        className="absolute inset-0"
+                        initial={{ opacity: 0, scale: 1.05 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ opacity: { duration: 1.2, ease: [0.22, 1, 0.36, 1] }, scale: { duration: 8, ease: 'linear' } }}
                     >
-                        <img
-                            src={images[index]}
-                            alt="Premium Car"
-                            className="w-full h-full object-cover object-center"
+                        <motion.img
+                            src={currentImage}
+                            alt=""
+                            className="w-full h-full object-cover"
+                            animate={{ scale: 1.08 }}
+                            transition={{ duration: 8, ease: 'linear' }}
                         />
                     </motion.div>
-                </motion.div>
+                )}
             </AnimatePresence>
 
-            {/* Overlays for Readability */}
-            <div className="absolute inset-0 bg-gradient-to-b from-[#050505]/70 via-[#050505]/40 to-[#050505] z-10" />
-            <div className="absolute inset-0 bg-black/20 z-10" />
+            {/* Fallback gradient if no images */}
+            {heroImages.length === 0 && (
+                <div className="absolute inset-0 bg-gradient-to-br from-[#0a0a0a] via-[#050505] to-[#0a1a18]" />
+            )}
+
+            {/* Gradient overlays for depth */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/20" />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/20 to-transparent" />
+
+            {/* Animated grain texture */}
+            <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\' opacity=\'0.5\'/%3E%3C/svg%3E")', backgroundSize: '128px' }} />
+
+            {/* Admin quick access — subtle top right */}
+            <Link to="/admin/login" className="absolute top-24 right-6 md:right-16 lg:right-24 z-20 p-2 rounded-full bg-white/[0.04] hover:bg-white/[0.08] text-white/20 hover:text-white/50 transition-all duration-300 backdrop-blur-sm" title="Admin">
+                <Settings className="w-4 h-4" />
+            </Link>
 
             {/* Content */}
-            <div className="relative z-20 h-full flex items-center justify-center text-center px-4 sm:px-6 lg:px-8">
-                <div className="max-w-5xl">
-
-                    {/* Badge */}
+            <div className="relative z-10 h-full flex flex-col justify-end pb-24 md:pb-32 px-6 md:px-16 lg:px-24 max-w-[1400px] mx-auto">
+                <AnimatePresence mode="wait">
                     <motion.div
-                        initial={{ opacity: 0, y: 30 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.8, delay: 0.5 }}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/10 mb-8"
+                        key={current}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.5 }}
                     >
-                        <Sparkles className="w-4 h-4 text-[#14A79D]" />
-                        <span className="text-sm font-medium text-white/90">Premium Experience</span>
+                        {/* Kicker with animated line */}
+                        <motion.div
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.6, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+                            className="flex items-center gap-3 mb-4 md:mb-6"
+                        >
+                            <motion.div
+                                initial={{ scaleX: 0 }}
+                                animate={{ scaleX: 1 }}
+                                transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                                className="w-8 h-[1.5px] bg-[#14A79D] origin-left"
+                            />
+                            <span className="text-[#14A79D] text-xs md:text-sm font-medium tracking-[0.25em] uppercase">
+                                {slide.kicker}
+                            </span>
+                        </motion.div>
+
+                        {/* Headline — letter by letter stagger per word */}
+                        <motion.h1
+                            initial={{ opacity: 0, y: 50 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.9, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                            className="font-display text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-white leading-[0.92] tracking-tight mb-6 md:mb-8 whitespace-pre-line"
+                        >
+                            {slide.headline}
+                        </motion.h1>
+
+                        {/* Subtitle */}
+                        <motion.p
+                            initial={{ opacity: 0, y: 20, filter: 'blur(4px)' }}
+                            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                            transition={{ duration: 0.6, delay: 0.45, ease: [0.22, 1, 0.36, 1] }}
+                            className="text-white/45 text-base md:text-lg max-w-lg mb-10 md:mb-12 leading-relaxed"
+                        >
+                            {slide.subtitle}
+                        </motion.p>
+
+                        {/* CTAs */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.6, delay: 0.55, ease: [0.22, 1, 0.36, 1] }}
+                            className="flex flex-wrap gap-4"
+                        >
+                            <Link to="/showroom" className="btn-primary group">
+                                Fahrzeuge entdecken
+                                <motion.span animate={{ x: [0, 4, 0] }} transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}>
+                                    <ArrowRight className="w-4 h-4" />
+                                </motion.span>
+                            </Link>
+                            <a href="tel:+4923069988585" className="btn-outline">
+                                <Phone className="w-4 h-4" /> Anrufen
+                            </a>
+                        </motion.div>
                     </motion.div>
+                </AnimatePresence>
 
-                    {/* Headline */}
-                    <motion.h1
-                        initial={{ opacity: 0, y: 30 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.8, delay: 0.7 }}
-                        className="text-5xl sm:text-7xl md:text-8xl lg:text-9xl font-bold tracking-tight text-white mb-8"
-                    >
-                        <span className="block mb-2">Drive</span>
-                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#14A79D] via-[#2DD4BF] to-[#EBA530]">
-                            Excellence
-                        </span>
-                    </motion.h1>
+                {/* Bottom bar: indicators + scroll hint */}
+                <div className="absolute bottom-8 left-6 md:left-16 lg:left-24 right-6 md:right-16 lg:right-24 flex items-center justify-between">
+                    {/* Slide indicators as animated lines */}
+                    <div className="flex gap-2">
+                        {slides.map((_, i) => (
+                            <button
+                                key={i}
+                                onClick={() => goTo(i)}
+                                className="relative h-[2px] rounded-full overflow-hidden transition-all duration-500"
+                                style={{ width: i === current ? 48 : 20, background: 'rgba(255,255,255,0.12)' }}
+                            >
+                                {i === current && (
+                                    <motion.div
+                                        className="absolute inset-0 bg-[#14A79D] rounded-full origin-left"
+                                        initial={{ scaleX: 0 }}
+                                        animate={{ scaleX: 1 }}
+                                        transition={{ duration: 6, ease: 'linear' }}
+                                    />
+                                )}
+                            </button>
+                        ))}
+                    </div>
 
-                    {/* Subtitle */}
-                    <motion.p
-                        initial={{ opacity: 0, y: 30 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.8, delay: 0.9 }}
-                        className="text-lg sm:text-xl md:text-2xl text-white/60 mb-10 max-w-2xl mx-auto leading-relaxed"
-                    >
-                        Erleben Sie Performance und Luxus. <br className="hidden sm:block" />
-                        Handverlesene Premium-Fahrzeuge für höchste Ansprüche.
-                    </motion.p>
-
-                    {/* CTAs */}
+                    {/* Scroll hint */}
                     <motion.div
-                        initial={{ opacity: 0, y: 30 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.8, delay: 1.1 }}
-                        className="flex flex-col sm:flex-row items-center justify-center gap-4"
+                        animate={{ y: [0, 6, 0] }}
+                        transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                        className="hidden md:flex items-center gap-2 text-white/25 text-xs tracking-widest uppercase"
                     >
-                        <Link
-                            to="/showroom"
-                            className="group w-full sm:w-auto px-8 py-4 bg-[#14A79D] hover:bg-[#118f86] text-white rounded-full font-semibold transition-all duration-300 flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(20,167,157,0.3)] hover:shadow-[0_0_30px_rgba(20,167,157,0.5)]"
-                        >
-                            Fahrzeuge ansehen
-                            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                        </Link>
-
-                        <Link
-                            to="/contact"
-                            className="group w-full sm:w-auto px-8 py-4 bg-white/5 hover:bg-white/10 text-white rounded-full font-semibold border border-white/10 backdrop-blur-sm transition-all duration-300 flex items-center justify-center gap-2"
-                        >
-                            <Phone className="w-5 h-5 opacity-70" />
-                            Kontakt aufnehmen
-                        </Link>
+                        <span>Scrollen</span>
+                        <ChevronDown className="w-3.5 h-3.5" />
                     </motion.div>
-
                 </div>
-            </div>
-
-            {/* Slider Progress Indicators */}
-            <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 flex gap-3">
-                {images.map((_, i) => (
-                    <button
-                        key={i}
-                        onClick={() => setIndex(i)}
-                        className={`h-1.5 rounded-full transition-all duration-500 ${i === index ? 'w-8 bg-white' : 'w-2 bg-white/30 hover:bg-white/50'
-                            }`}
-                        aria-label={`Go to slide ${i + 1}`}
-                    />
-                ))}
             </div>
         </section>
     );
 };
+
+export default Hero;

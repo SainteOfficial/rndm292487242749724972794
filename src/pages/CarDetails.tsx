@@ -1,22 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronLeft, ChevronRight, Heart, Share2, Phone, Mail, MapPin,
-  Calendar, Gauge, Fuel, Settings, Palette, Car, Shield, Award,
-  CheckCircle, ArrowUpRight, Sparkles, X, ZoomIn
+  Calendar, Gauge, Fuel, Settings, Palette, Car, Shield,
+  X, ArrowRight
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-
-// GlowCard Component
-const GlowCard = ({ children, className = "", gradient = "from-[#14A79D]/10" }: any) => (
-  <div className={`group relative ${className}`}>
-    <div className={`absolute -inset-px rounded-2xl bg-gradient-to-br ${gradient} to-transparent opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-500`} />
-    <div className="relative h-full rounded-2xl bg-[#0a0a0a] border border-white/[0.04] group-hover:border-white/[0.08] transition-all duration-500 overflow-hidden">
-      {children}
-    </div>
-  </div>
-);
 
 const CarDetails = () => {
   const { id } = useParams();
@@ -30,457 +20,321 @@ const CarDetails = () => {
   const [relatedCars, setRelatedCars] = useState<any[]>([]);
 
   useEffect(() => {
-    if (id) {
-      fetchCar();
-      checkFavorite();
-    } else {
-      setLoading(false);
-      setError(true);
-    }
+    if (id) { fetchCar(); checkFavorite(); }
+    else { setLoading(false); setError(true); }
   }, [id]);
 
-  const safeJSONParse = (value: any, fallback: any = {}) => {
-    if (!value) return fallback;
-    if (typeof value === 'object') return value;
-    try {
-      return JSON.parse(value);
-    } catch {
-      return fallback;
-    }
+  useEffect(() => {
+    if (!lightboxOpen) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setLightboxOpen(false);
+      if (e.key === 'ArrowLeft') setCurrentImage(p => p === 0 ? (car?.images?.length || 1) - 1 : p - 1);
+      if (e.key === 'ArrowRight') setCurrentImage(p => p === (car?.images?.length || 1) - 1 ? 0 : p + 1);
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [lightboxOpen, car]);
+
+  const safeJSON = (val: any, fb: any = {}) => {
+    if (!val) return fb;
+    if (typeof val === 'object') return val;
+    try { return JSON.parse(val); } catch { return fb; }
   };
 
   const fetchCar = async () => {
     try {
-      const { data, error: fetchError } = await supabase
-        .from('cars')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (fetchError) {
-        console.error('Fetch error:', fetchError);
-        setError(true);
-        setLoading(false);
-        return;
-      }
-
-      if (data) {
-        const parsedCar = {
-          ...data,
-          specs: safeJSONParse(data.specs, {}),
-          condition: safeJSONParse(data.condition, {}),
-          images: Array.isArray(data.images) ? data.images : [],
-          additionalfeatures: typeof data.additionalfeatures === 'string'
-            ? data.additionalfeatures.split(',')
-            : Array.isArray(data.additionalfeatures)
-              ? data.additionalfeatures
-              : [],
-        };
-        setCar(parsedCar);
-        if (data.brand) {
-          fetchRelatedCars(data.brand);
-        }
-      } else {
-        setError(true);
-      }
-    } catch (err) {
-      console.error('Error:', err);
-      setError(true);
-    } finally {
-      setLoading(false);
-    }
+      const { data, error: e } = await supabase.from('cars').select('*').eq('id', id).single();
+      if (e || !data) { setError(true); setLoading(false); return; }
+      setCar({
+        ...data,
+        specs: safeJSON(data.specs, {}),
+        condition: safeJSON(data.condition, {}),
+        images: Array.isArray(data.images) ? data.images : [],
+        additionalfeatures: typeof data.additionalfeatures === 'string'
+          ? data.additionalfeatures.split(',') : Array.isArray(data.additionalfeatures) ? data.additionalfeatures : [],
+      });
+      if (data.brand) fetchRelated(data.brand);
+    } catch { setError(true); }
+    finally { setLoading(false); }
   };
 
-  const fetchRelatedCars = async (brand: string) => {
-    const { data } = await supabase
-      .from('cars')
-      .select('*')
-      .eq('brand', brand)
-      .eq('status', 'available')
-      .neq('id', id)
-      .limit(3);
+  const fetchRelated = async (brand: string) => {
+    const { data } = await supabase.from('cars').select('*').eq('brand', brand).eq('status', 'available').neq('id', id).limit(3);
     if (data) setRelatedCars(data);
   };
 
   const checkFavorite = () => {
-    const saved = localStorage.getItem('carFavorites');
-    if (saved) {
-      const favorites = JSON.parse(saved);
-      setIsFavorite(favorites.includes(id));
-    }
+    try { setIsFavorite(JSON.parse(localStorage.getItem('carFavorites') || '[]').includes(id)); } catch { }
   };
 
   const toggleFavorite = () => {
-    const saved = localStorage.getItem('carFavorites');
-    let favorites = saved ? JSON.parse(saved) : [];
-
-    if (isFavorite) {
-      favorites = favorites.filter((fav: string) => fav !== id);
-    } else {
-      favorites.push(id);
-    }
-
-    localStorage.setItem('carFavorites', JSON.stringify(favorites));
+    const saved = JSON.parse(localStorage.getItem('carFavorites') || '[]');
+    const next = isFavorite ? saved.filter((f: string) => f !== id) : [...saved, id];
+    localStorage.setItem('carFavorites', JSON.stringify(next));
     setIsFavorite(!isFavorite);
   };
 
-  const shareVehicle = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: `${car.brand} ${car.model}`,
-        text: `Schau dir diesen ${car.brand} ${car.model} bei Autosmaya an!`,
-        url: window.location.href,
-      });
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-    }
+  const share = () => {
+    if (navigator.share) navigator.share({ title: `${car.brand} ${car.model}`, url: window.location.href });
+    else navigator.clipboard.writeText(window.location.href);
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#050505] flex items-center justify-center">
-        <div className="w-16 h-16 border-2 border-[#14A79D]/20 border-t-[#14A79D] rounded-full animate-spin" />
+  /* Loading */
+  if (loading) return (
+    <div className="min-h-screen bg-[#050505] pt-24 pb-20">
+      <div className="max-w-[1400px] mx-auto px-6 md:px-16 lg:px-24 pt-8">
+        <div className="skeleton h-[60vh] rounded-2xl mb-6" />
+        <div className="grid grid-cols-5 gap-3 mb-12">{[...Array(5)].map((_, i) => <div key={i} className="skeleton h-20 rounded-xl" />)}</div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 skeleton h-96 rounded-2xl" />
+          <div className="skeleton h-80 rounded-2xl" />
+        </div>
       </div>
-    );
-  }
+    </div>
+  );
 
-  if (!car || error) {
-    return (
-      <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center">
-        <Car className="w-20 h-20 text-white/10 mb-6" />
-        <h2 className="text-2xl font-bold text-white mb-2">Fahrzeug nicht gefunden</h2>
-        <p className="text-white/40 mb-6">Das gesuchte Fahrzeug existiert nicht mehr.</p>
-        <Link to="/showroom" className="px-6 py-3 rounded-full bg-[#14A79D] text-white font-medium">
-          Zum Showroom
-        </Link>
+  /* Error */
+  if (!car || error) return (
+    <div className="min-h-screen bg-[#050505] flex items-center justify-center">
+      <div className="text-center">
+        <h2 className="text-2xl font-display font-bold text-white mb-3">Fahrzeug nicht gefunden</h2>
+        <p className="text-white/40 mb-6">Das gesuchte Fahrzeug ist leider nicht mehr verfügbar.</p>
+        <Link to="/showroom" className="btn-primary">Zum Showroom</Link>
       </div>
-    );
-  }
+    </div>
+  );
 
   const images = car.images || [];
-  const specs = [
-    { icon: Calendar, label: 'Baujahr', value: car.year },
-    { icon: Gauge, label: 'Kilometerstand', value: `${car.mileage?.toLocaleString()} km` },
-    { icon: Fuel, label: 'Kraftstoff', value: car.specs?.fuel || 'Benzin' },
-    { icon: Settings, label: 'Getriebe', value: car.specs?.transmission || 'Automatik' },
-    { icon: Car, label: 'Leistung', value: `${car.specs?.power || car.power} PS` },
-    { icon: Palette, label: 'Farbe', value: car.specs?.color || car.color || 'Schwarz' },
-  ];
+  const specs = car.specs || {};
+
+  const specItems = [
+    { icon: Calendar, label: 'Erstzulassung', value: car.year },
+    { icon: Gauge, label: 'Kilometerstand', value: car.mileage ? `${car.mileage.toLocaleString()} km` : null },
+    { icon: Fuel, label: 'Kraftstoff', value: car.fuel },
+    { icon: Settings, label: 'Getriebe', value: car.transmission },
+    { icon: Car, label: 'Leistung', value: specs.power ? `${specs.power} PS` : null },
+    { icon: Palette, label: 'Farbe', value: specs.color },
+  ].filter(s => s.value);
 
   return (
-    <div className="min-h-screen bg-[#050505] pt-24 pb-20">
-      {/* Background */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-[20%] -left-40 w-[500px] h-[500px] bg-[#14A79D]/5 rounded-full blur-[200px]" />
-        <div className="absolute bottom-[20%] -right-40 w-[400px] h-[400px] bg-[#EBA530]/5 rounded-full blur-[200px]" />
+    <div className="min-h-screen bg-[#050505] pt-20 pb-20">
+      {/* ─── Hero Image ─── */}
+      <div className="relative w-full h-[50vh] md:h-[65vh] bg-black overflow-hidden cursor-pointer" onClick={() => setLightboxOpen(true)}>
+        <AnimatePresence mode="wait">
+          <motion.img
+            key={currentImage}
+            src={images[currentImage]}
+            alt={`${car.brand} ${car.model}`}
+            className="w-full h-full object-cover"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
+          />
+        </AnimatePresence>
+        <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-transparent" />
+
+        {/* Nav arrows */}
+        {images.length > 1 && (
+          <>
+            <button onClick={e => { e.stopPropagation(); setCurrentImage(p => p === 0 ? images.length - 1 : p - 1); }}
+              className="absolute left-4 top-1/2 -translate-y-1/2 p-2.5 rounded-full bg-black/40 backdrop-blur-md text-white/70 hover:text-white transition-colors">
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <button onClick={e => { e.stopPropagation(); setCurrentImage(p => p === images.length - 1 ? 0 : p + 1); }}
+              className="absolute right-4 top-1/2 -translate-y-1/2 p-2.5 rounded-full bg-black/40 backdrop-blur-md text-white/70 hover:text-white transition-colors">
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </>
+        )}
+
+        {/* Counter */}
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-md text-white/60 text-xs font-medium">
+          {currentImage + 1} / {images.length}
+        </div>
       </div>
 
-      <div className="relative z-10 max-w-[1400px] mx-auto px-6 lg:px-8">
-        {/* Back Button */}
-        <motion.button
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-white/50 hover:text-white mb-8 transition-colors"
-        >
-          <ChevronLeft className="w-5 h-5" />
-          Zurück
-        </motion.button>
+      {/* ─── Thumbnail strip ─── */}
+      {images.length > 1 && (
+        <div className="max-w-[1400px] mx-auto px-6 md:px-16 lg:px-24 mt-4">
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
+            {images.map((img: string, i: number) => (
+              <button key={i} onClick={() => setCurrentImage(i)}
+                className={`flex-shrink-0 w-20 h-14 md:w-24 md:h-16 rounded-lg overflow-hidden border-2 transition-all duration-300 ${i === currentImage ? 'border-[#14A79D] opacity-100' : 'border-transparent opacity-40 hover:opacity-70'
+                  }`}>
+                <img src={img} alt="" className="w-full h-full object-cover" />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column - Images */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="lg:col-span-2 space-y-4"
-          >
-            {/* Main Image */}
-            <GlowCard>
-              <div
-                className="relative aspect-[16/10] cursor-zoom-in"
-                onClick={() => setLightboxOpen(true)}
-              >
-                <img
-                  src={images[currentImage] || 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=1200'}
-                  alt={`${car.brand} ${car.model}`}
-                  className="w-full h-full object-cover"
-                />
-
-                {/* Navigation */}
-                {images.length > 1 && (
-                  <>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setCurrentImage(prev => prev === 0 ? images.length - 1 : prev - 1); }}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-black/50 backdrop-blur-md border border-white/10 text-white hover:bg-black/70 transition-colors"
-                    >
-                      <ChevronLeft className="w-5 h-5" />
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setCurrentImage(prev => prev === images.length - 1 ? 0 : prev + 1); }}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-black/50 backdrop-blur-md border border-white/10 text-white hover:bg-black/70 transition-colors"
-                    >
-                      <ChevronRight className="w-5 h-5" />
-                    </button>
-                  </>
-                )}
-
-                {/* Zoom Hint */}
-                <div className="absolute bottom-4 right-4 flex items-center gap-2 px-3 py-2 rounded-full bg-black/50 backdrop-blur-md text-white/60 text-sm">
-                  <ZoomIn className="w-4 h-4" />
-                  Vergrößern
+      {/* ─── Main content ─── */}
+      <div className="max-w-[1400px] mx-auto px-6 md:px-16 lg:px-24 mt-10">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+          {/* Left — details */}
+          <div className="lg:col-span-2 space-y-10">
+            {/* Title row */}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}>
+              <div className="flex items-start justify-between gap-4 mb-2">
+                <div>
+                  <h1 className="text-3xl md:text-4xl font-display font-bold text-white tracking-tight">
+                    {car.brand} {car.model}
+                  </h1>
+                  <p className="text-white/35 text-sm mt-1">{car.year} • {car.mileage?.toLocaleString()} km • {car.fuel}</p>
                 </div>
-
-                {/* Image Counter */}
-                <div className="absolute bottom-4 left-4 px-3 py-2 rounded-full bg-black/50 backdrop-blur-md text-white/60 text-sm">
-                  {currentImage + 1} / {images.length}
+                <div className="flex gap-2 flex-shrink-0">
+                  <button onClick={toggleFavorite} className={`p-2.5 rounded-full border transition-all duration-300 ${isFavorite ? 'border-red-500/30 text-red-500' : 'border-white/[0.06] text-white/40 hover:text-white'}`}>
+                    <Heart className={`w-4 h-4 ${isFavorite ? 'fill-red-500' : ''}`} />
+                  </button>
+                  <button onClick={share} className="p-2.5 rounded-full border border-white/[0.06] text-white/40 hover:text-white transition-all duration-300">
+                    <Share2 className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
-            </GlowCard>
+            </motion.div>
 
-            {/* Thumbnails */}
-            {images.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                {images.map((img: string, i: number) => (
-                  <button
-                    key={i}
-                    onClick={() => setCurrentImage(i)}
-                    className={`relative flex-shrink-0 w-24 h-16 rounded-xl overflow-hidden border-2 transition-all ${currentImage === i ? 'border-[#14A79D]' : 'border-transparent opacity-60 hover:opacity-100'
-                      }`}
-                  >
-                    <img src={img} alt="" className="w-full h-full object-cover" />
-                  </button>
+            {/* Specs grid */}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}>
+              <h2 className="text-lg font-display font-semibold text-white mb-4">Technische Daten</h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {specItems.map(s => (
+                  <div key={s.label} className="px-4 py-4 rounded-xl bg-white/[0.02] border border-white/[0.04]">
+                    <s.icon className="w-4 h-4 text-[#14A79D] mb-2" />
+                    <p className="text-white/30 text-xs mb-0.5">{s.label}</p>
+                    <p className="text-white font-medium text-sm">{s.value}</p>
+                  </div>
                 ))}
               </div>
-            )}
-
-            {/* Specs Grid */}
-            <GlowCard>
-              <div className="p-6">
-                <h3 className="text-lg font-semibold text-white mb-6">Technische Daten</h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {specs.map((spec) => (
-                    <div key={spec.label} className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.03]">
-                      <spec.icon className="w-5 h-5 text-[#14A79D] mb-2" />
-                      <div className="text-xs text-white/40 mb-1">{spec.label}</div>
-                      <div className="text-white font-medium">{spec.value}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </GlowCard>
-
-            {/* Features */}
-            {car.additionalfeatures && car.additionalfeatures.length > 0 && (
-              <GlowCard>
-                <div className="p-6">
-                  <h3 className="text-lg font-semibold text-white mb-6">Ausstattung</h3>
-                  <div className="grid grid-cols-2 gap-3">
-                    {car.additionalfeatures.map((feature: string, i: number) => (
-                      <div key={i} className="flex items-center gap-2 text-white/60">
-                        <CheckCircle className="w-4 h-4 text-[#14A79D] flex-shrink-0" />
-                        <span className="text-sm">{typeof feature === 'string' ? feature.trim() : feature}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </GlowCard>
-            )}
+            </motion.div>
 
             {/* Description */}
             {car.description && (
-              <GlowCard>
-                <div className="p-6">
-                  <h3 className="text-lg font-semibold text-white mb-4">Beschreibung</h3>
-                  <p className="text-white/50 leading-relaxed whitespace-pre-line">{car.description}</p>
-                </div>
-              </GlowCard>
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}>
+                <h2 className="text-lg font-display font-semibold text-white mb-4">Beschreibung</h2>
+                <p className="text-white/40 text-sm leading-relaxed whitespace-pre-line">{car.description}</p>
+              </motion.div>
             )}
-          </motion.div>
 
-          {/* Right Column - Info & CTA */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="space-y-6"
-          >
-            {/* Main Info Card */}
-            <GlowCard gradient="from-[#14A79D]/10">
-              <div className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <div className="text-sm text-[#14A79D] mb-1">Premium Fahrzeug</div>
-                    <h1 className="text-2xl font-bold text-white">
-                      {car.brand} {car.model}
-                    </h1>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={toggleFavorite}
-                      className={`p-3 rounded-xl border transition-all ${isFavorite
-                        ? 'bg-red-500/10 border-red-500/30 text-red-500'
-                        : 'bg-white/[0.02] border-white/[0.05] text-white/40 hover:text-white'
-                        }`}
-                    >
-                      <Heart className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} />
-                    </button>
-                    <button
-                      onClick={shareVehicle}
-                      className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.05] text-white/40 hover:text-white transition-colors"
-                    >
-                      <Share2 className="w-5 h-5" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Price */}
-                <div className="mb-6 pb-6 border-b border-white/[0.05]">
-                  <div className="text-4xl font-bold text-white">
-                    €{car.price?.toLocaleString()}
-                  </div>
-                  <div className="text-white/40 text-sm mt-1">inkl. MwSt.</div>
-                </div>
-
-                {/* Trust Badges */}
-                <div className="flex gap-3 mb-6">
-                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.02] border border-white/[0.03]">
-                    <Shield className="w-4 h-4 text-[#14A79D]" />
-                    <span className="text-xs text-white/60">TÜV geprüft</span>
-                  </div>
-                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.02] border border-white/[0.03]">
-                    <Award className="w-4 h-4 text-[#EBA530]" />
-                    <span className="text-xs text-white/60">12 Mon. Garantie</span>
-                  </div>
-                </div>
-
-                {/* CTAs */}
-                <div className="space-y-3">
-                  <Link
-                    to={`/contact?carId=${id}`}
-                    className="flex items-center justify-center gap-2 w-full py-4 rounded-xl bg-gradient-to-r from-[#14A79D] to-[#14A79D]/80 text-white font-semibold hover:shadow-lg hover:shadow-[#14A79D]/20 transition-all"
-                  >
-                    <Sparkles className="w-5 h-5" />
-                    Anfrage senden
-                  </Link>
-
-                  <a
-                    href="tel:+4923069988585"
-                    className="flex items-center justify-center gap-2 w-full py-4 rounded-xl bg-white/[0.02] border border-white/[0.05] text-white hover:bg-white/[0.05] transition-colors"
-                  >
-                    <Phone className="w-5 h-5" />
-                    Anrufen
-                  </a>
-                </div>
-              </div>
-            </GlowCard>
-
-            {/* Contact Card */}
-            <GlowCard>
-              <div className="p-6">
-                <h3 className="text-lg font-semibold text-white mb-4">Standort</h3>
-                <div className="space-y-3 text-white/50">
-                  <div className="flex items-start gap-3">
-                    <MapPin className="w-5 h-5 text-[#14A79D] flex-shrink-0 mt-0.5" />
-                    <div>
-                      <div>Münsterstraße 207</div>
-                      <div>44534 Lünen</div>
+            {/* Features */}
+            {car.additionalfeatures?.length > 0 && (
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}>
+                <h2 className="text-lg font-display font-semibold text-white mb-4">Ausstattung</h2>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  {car.additionalfeatures.map((f: string, i: number) => (
+                    <div key={i} className="flex items-center gap-2 text-white/40 text-sm py-1.5">
+                      <div className="w-1 h-1 rounded-full bg-[#14A79D]" />
+                      {f.trim()}
                     </div>
-                  </div>
-                  <a href="tel:+4923069988585" className="flex items-center gap-3 hover:text-white transition-colors">
-                    <Phone className="w-5 h-5 text-[#14A79D]" />
-                    +49 2306 9988585
-                  </a>
-                  <a href="mailto:kfzhandelsmaya@autosmaya.de" className="flex items-center gap-3 hover:text-white transition-colors">
-                    <Mail className="w-5 h-5 text-[#14A79D]" />
-                    kfzhandelsmaya@autosmaya.de
-                  </a>
+                  ))}
                 </div>
+              </motion.div>
+            )}
+          </div>
 
-                <a
-                  href="https://maps.app.goo.gl/X5NgfpaNaGw5bscWA"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 w-full mt-4 py-3 rounded-xl bg-white/[0.02] border border-white/[0.05] text-white/60 hover:text-white transition-colors"
-                >
-                  Route planen
-                  <ArrowUpRight className="w-4 h-4" />
+          {/* Right — sticky sidebar */}
+          <div className="lg:sticky lg:top-24 lg:self-start space-y-5">
+            {/* Price card */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+              className="p-6 rounded-2xl bg-white/[0.02] border border-white/[0.04]"
+            >
+              <p className="text-white/30 text-xs uppercase tracking-[0.1em] mb-2">Preis</p>
+              <p className="text-3xl font-display font-bold text-white mb-1">€{car.price?.toLocaleString()}</p>
+              <p className="text-white/20 text-xs mb-6">inkl. MwSt. • Finanzierung möglich</p>
+
+              <div className="space-y-3">
+                <a href={`https://wa.me/4923069988585?text=${encodeURIComponent(`Ich interessiere mich für den ${car.brand} ${car.model} (${car.year})`)}`}
+                  target="_blank" rel="noopener noreferrer" className="btn-primary w-full justify-center">
+                  <Phone className="w-4 h-4" /> WhatsApp Anfrage
+                </a>
+                <a href="tel:+4923069988585" className="btn-outline w-full justify-center">
+                  <Phone className="w-4 h-4" /> Anrufen
                 </a>
               </div>
-            </GlowCard>
-          </motion.div>
+            </motion.div>
+
+            {/* Dealer card */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
+              className="p-6 rounded-2xl bg-white/[0.02] border border-white/[0.04]"
+            >
+              <h3 className="text-sm font-display font-semibold text-white mb-4">Autosmaya</h3>
+              <div className="space-y-3 text-sm text-white/40">
+                <div className="flex items-start gap-3">
+                  <MapPin className="w-4 h-4 mt-0.5 text-white/20 flex-shrink-0" />
+                  <span>Münsterstraße 207, 44534 Lünen</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Phone className="w-4 h-4 text-white/20 flex-shrink-0" />
+                  <a href="tel:+4923069988585" className="hover:text-white transition-colors">+49 2306 9988585</a>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Mail className="w-4 h-4 text-white/20 flex-shrink-0" />
+                  <a href="mailto:kfzhandelsmaya@autosmaya.de" className="hover:text-white transition-colors">kfzhandelsmaya@autosmaya.de</a>
+                </div>
+              </div>
+              <div className="mt-4 pt-4 border-t border-white/[0.04]">
+                <div className="flex items-center gap-2 text-white/30 text-xs">
+                  <Shield className="w-3.5 h-3.5 text-[#14A79D]" />
+                  <span>12 Monate Garantie • TÜV-geprüft</span>
+                </div>
+              </div>
+            </motion.div>
+          </div>
         </div>
 
-        {/* Related Cars */}
+        {/* ─── Related cars ─── */}
         {relatedCars.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="mt-20"
-          >
-            <h2 className="text-2xl font-bold text-white mb-8">
-              Ähnliche Fahrzeuge
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {relatedCars.map((relCar) => (
-                <GlowCard key={relCar.id}>
-                  <Link to={`/car/${relCar.id}`}>
-                    <div className="aspect-[16/10] overflow-hidden">
-                      <img
-                        src={relCar.images?.[0] || 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=600'}
-                        alt={`${relCar.brand} ${relCar.model}`}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
+          <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }} className="mt-20 pt-16 border-t border-white/[0.04]">
+            <h2 className="text-2xl font-display font-bold text-white tracking-tight mb-8">Ähnliche Fahrzeuge</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {relatedCars.map(rc => (
+                <Link key={rc.id} to={`/car/${rc.id}`} className="group card-luxury">
+                  <div className="relative aspect-[4/5] overflow-hidden">
+                    <img src={rc.images?.[0]} alt={`${rc.brand} ${rc.model}`} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                    <div className="absolute bottom-4 left-4">
+                      <p className="text-white text-lg font-display font-bold">€{rc.price?.toLocaleString()}</p>
                     </div>
-                    <div className="p-5">
-                      <h3 className="text-white font-semibold mb-2">{relCar.brand} {relCar.model}</h3>
-                      <div className="flex items-center justify-between">
-                        <span className="text-[#14A79D] font-bold">€{relCar.price?.toLocaleString()}</span>
-                        <span className="text-white/40 text-sm">{relCar.year}</span>
-                      </div>
-                    </div>
-                  </Link>
-                </GlowCard>
+                  </div>
+                  <div className="p-5">
+                    <h3 className="text-white font-display font-semibold group-hover:text-[#14A79D] transition-colors duration-300">{rc.brand} {rc.model}</h3>
+                    <p className="text-white/30 text-xs mt-1">{rc.year} • {rc.mileage?.toLocaleString()} km</p>
+                  </div>
+                </Link>
               ))}
             </div>
           </motion.div>
         )}
       </div>
 
-      {/* Lightbox */}
+      {/* ─── Lightbox ─── */}
       <AnimatePresence>
         {lightboxOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/95 backdrop-blur-xl flex items-center justify-center"
-            onClick={() => setLightboxOpen(false)}
-          >
-            <button className="absolute top-6 right-6 p-3 rounded-full bg-white/5 border border-white/10 text-white">
-              <X className="w-6 h-6" />
-            </button>
-
-            <button
-              onClick={(e) => { e.stopPropagation(); setCurrentImage(prev => prev === 0 ? images.length - 1 : prev - 1); }}
-              className="absolute left-6 p-4 rounded-full bg-white/5 border border-white/10 text-white"
-            >
-              <ChevronLeft className="w-6 h-6" />
-            </button>
-
-            <button
-              onClick={(e) => { e.stopPropagation(); setCurrentImage(prev => prev === images.length - 1 ? 0 : prev + 1); }}
-              className="absolute right-6 p-4 rounded-full bg-white/5 border border-white/10 text-white"
-            >
-              <ChevronRight className="w-6 h-6" />
-            </button>
-
-            <img
-              src={images[currentImage]}
-              alt=""
-              className="max-w-[90vw] max-h-[85vh] object-contain rounded-xl"
-              onClick={(e) => e.stopPropagation()}
-            />
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}
+            className="fixed inset-0 z-50 bg-black/95 backdrop-blur-xl flex items-center justify-center" onClick={() => setLightboxOpen(false)}>
+            <button className="absolute top-6 right-6 p-2 text-white/60 hover:text-white transition-colors z-10"><X className="w-6 h-6" /></button>
+            {images.length > 1 && (
+              <>
+                <button onClick={e => { e.stopPropagation(); setCurrentImage(p => p === 0 ? images.length - 1 : p - 1); }}
+                  className="absolute left-4 md:left-8 p-3 rounded-full bg-white/5 text-white/70 hover:text-white transition-colors z-10">
+                  <ChevronLeft className="w-6 h-6" />
+                </button>
+                <button onClick={e => { e.stopPropagation(); setCurrentImage(p => p === images.length - 1 ? 0 : p + 1); }}
+                  className="absolute right-4 md:right-8 p-3 rounded-full bg-white/5 text-white/70 hover:text-white transition-colors z-10">
+                  <ChevronRight className="w-6 h-6" />
+                </button>
+              </>
+            )}
+            <AnimatePresence mode="wait">
+              <motion.img key={currentImage} src={images[currentImage]} alt="" onClick={e => e.stopPropagation()}
+                className="max-w-[90vw] max-h-[85vh] object-contain rounded-xl"
+                initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.3 }} />
+            </AnimatePresence>
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-white/50 text-sm">{currentImage + 1} / {images.length}</div>
           </motion.div>
         )}
       </AnimatePresence>

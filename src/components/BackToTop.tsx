@@ -10,65 +10,56 @@ const BackToTop = () => {
     const handleScroll = () => {
       const scrollTop = window.scrollY;
       const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-      const progress = (scrollTop / docHeight) * 100;
+      const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
 
       setScrollProgress(progress);
       setIsVisible(scrollTop > 400);
     };
 
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   const scrollToTop = () => {
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth'
-    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  const circumference = 2 * Math.PI * 22;
 
   return (
     <AnimatePresence>
       {isVisible && (
         <motion.button
-          initial={{ opacity: 0, scale: 0.8, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.8, y: 20 }}
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
+          initial={{ opacity: 0, scale: 0.7, y: 20, filter: 'blur(8px)' }}
+          animate={{ opacity: 1, scale: 1, y: 0, filter: 'blur(0px)' }}
+          exit={{ opacity: 0, scale: 0.7, y: 20, filter: 'blur(8px)' }}
+          whileHover={{ scale: 1.08 }}
+          whileTap={{ scale: 0.92 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 20 }}
           onClick={scrollToTop}
           className="fixed bottom-8 right-8 z-40 group"
+          aria-label="Back to top"
         >
           {/* Progress Ring */}
-          <svg
-            className="w-14 h-14 -rotate-90"
-            viewBox="0 0 56 56"
-          >
-            {/* Background Circle */}
+          <svg className="w-13 h-13 -rotate-90" viewBox="0 0 52 52" style={{ width: 52, height: 52 }}>
             <circle
-              cx="28"
-              cy="28"
-              r="24"
+              cx="26" cy="26" r="22"
               fill="none"
-              stroke="rgba(255,255,255,0.05)"
-              strokeWidth="2"
+              stroke="rgba(255,255,255,0.04)"
+              strokeWidth="1.5"
             />
-            {/* Progress Circle */}
             <circle
-              cx="28"
-              cy="28"
-              r="24"
+              cx="26" cy="26" r="22"
               fill="none"
-              stroke="url(#gradient)"
-              strokeWidth="2"
+              stroke="url(#btt-gradient)"
+              strokeWidth="1.5"
               strokeLinecap="round"
-              strokeDasharray={`${2 * Math.PI * 24}`}
-              strokeDashoffset={`${2 * Math.PI * 24 * (1 - scrollProgress / 100)}`}
-              className="transition-all duration-150"
+              strokeDasharray={circumference}
+              strokeDashoffset={circumference * (1 - scrollProgress / 100)}
+              className="transition-all duration-100"
             />
-            {/* Gradient Definition */}
             <defs>
-              <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <linearGradient id="btt-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
                 <stop offset="0%" stopColor="#14A79D" />
                 <stop offset="100%" stopColor="#EBA530" />
               </linearGradient>
@@ -76,8 +67,8 @@ const BackToTop = () => {
           </svg>
 
           {/* Button Inner */}
-          <div className="absolute inset-2 flex items-center justify-center rounded-full bg-[#0a0a0a] border border-white/[0.05] group-hover:border-[#14A79D]/30 transition-colors">
-            <ChevronUp className="w-5 h-5 text-white/60 group-hover:text-[#14A79D] transition-colors" />
+          <div className="absolute inset-[5px] flex items-center justify-center rounded-full bg-[#0a0a0a]/90 backdrop-blur-xl border border-white/[0.04] group-hover:border-[#14A79D]/20 transition-all duration-300">
+            <ChevronUp className="w-4 h-4 text-white/50 group-hover:text-[#14A79D] transition-colors duration-300" />
           </div>
         </motion.button>
       )}
