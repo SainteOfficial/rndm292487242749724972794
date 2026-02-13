@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
@@ -61,6 +61,9 @@ const Admin = () => {
     field: 'created_at',
     direction: 'desc'
   });
+  const [loadingInquiries, setLoadingInquiries] = useState(false);
+  const [selectedInquiry, setSelectedInquiry] = useState<any | null>(null);
+  const [inquiryFilter, setInquiryFilter] = useState<'all' | 'new' | 'read' | 'replied'>('all');
 
   const categories = [
     'Exterieur',
@@ -86,6 +89,12 @@ const Admin = () => {
     }
   }, [activeTab, filterCategory, gallerySort]);
 
+  useEffect(() => {
+    if (activeTab === 'inquiries') {
+      fetchInquiries();
+    }
+  }, [activeTab, inquiryFilter]);
+
   const fetchCars = async () => {
     try {
       const { data, error } = await supabase
@@ -108,6 +117,56 @@ const Admin = () => {
       toast.error('Fehler beim Laden der Fahrzeuge');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchInquiries = async () => {
+    try {
+      setLoadingInquiries(true);
+      let query = supabase.from('inquiries').select('*').order('created_at', { ascending: false });
+      if (inquiryFilter !== 'all') {
+        query = query.eq('status', inquiryFilter);
+      }
+      const { data, error } = await query;
+      if (error) throw error;
+      setInquiries(data || []);
+    } catch (error: any) {
+      if (error?.code === '42P01') {
+        setInquiries([]);
+      } else {
+        console.error('Error fetching inquiries:', error);
+      }
+    } finally {
+      setLoadingInquiries(false);
+    }
+  };
+
+  const updateInquiryStatus = async (id: string, status: string) => {
+    try {
+      const { error } = await supabase.from('inquiries').update({ status }).eq('id', id);
+      if (error) throw error;
+      toast.success(`Anfrage als "${status === 'read' ? 'Gelesen' : status === 'replied' ? 'Beantwortet' : status}" markiert`);
+      fetchInquiries();
+      if (selectedInquiry?.id === id) {
+        setSelectedInquiry((prev: any) => ({ ...prev, status }));
+      }
+    } catch (error) {
+      console.error('Error updating inquiry:', error);
+      toast.error('Fehler beim Aktualisieren der Anfrage');
+    }
+  };
+
+  const deleteInquiry = async (id: string) => {
+    if (!window.confirm('Möchten Sie diese Anfrage wirklich löschen?')) return;
+    try {
+      const { error } = await supabase.from('inquiries').delete().eq('id', id);
+      if (error) throw error;
+      toast.success('Anfrage gelöscht');
+      if (selectedInquiry?.id === id) setSelectedInquiry(null);
+      fetchInquiries();
+    } catch (error) {
+      console.error('Error deleting inquiry:', error);
+      toast.error('Fehler beim Löschen');
     }
   };
 
@@ -138,7 +197,7 @@ const Admin = () => {
 
       // Prüfe, ob mindestens ein Bild vorhanden ist
       if (!car.images || car.images.length === 0) {
-        toast.info('Das Fahrzeug hat keine Bilder. Fahrzeuge mit Bildern werden besser wahrgenommen.');
+        toast('Das Fahrzeug hat keine Bilder. Fahrzeuge mit Bildern werden besser wahrgenommen.');
       }
 
       // Create a copy of the car object with the correct field name
@@ -161,7 +220,7 @@ const Admin = () => {
       // Zeige Ladetoast an
       const toastId = toast.loading(isNewCar ? 'Fahrzeug wird erstellt...' : 'Fahrzeug wird aktualisiert...');
 
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('cars')
         .upsert(carToSave)
         .select();
@@ -182,7 +241,7 @@ const Admin = () => {
       fetchCars();
     } catch (error) {
       console.error('Error saving car:', error);
-      toast.error(`Fehler beim Speichern des Fahrzeugs: ${error.message || 'Unbekannter Fehler'}`);
+      toast.error(`Fehler beim Speichern des Fahrzeugs: ${(error as Error).message || 'Unbekannter Fehler'}`);
     }
   };
 
@@ -275,18 +334,18 @@ const Admin = () => {
     setActiveTab('basic');
 
     // Zeige einen Toast an, um zu bestätigen, dass ein neues Auto erstellt wird
-    toast.info('Neues Fahrzeug wird erstellt. Bitte füllen Sie alle erforderlichen Felder aus.');
+    toast('Neues Fahrzeug wird erstellt. Bitte füllen Sie alle erforderlichen Felder aus.');
   };
 
   const updateCarField = (field: string, value: any) => {
-    setEditingCar(prev => ({
+    setEditingCar((prev: any) => ({
       ...prev,
       [field]: value
     }));
   };
 
   const updateSpecsField = (field: string, value: any) => {
-    setEditingCar(prev => ({
+    setEditingCar((prev: any) => ({
       ...prev,
       specs: {
         ...prev.specs,
@@ -296,7 +355,7 @@ const Admin = () => {
   };
 
   const updateConditionField = (field: string, value: any) => {
-    setEditingCar(prev => ({
+    setEditingCar((prev: any) => ({
       ...prev,
       condition: {
         ...prev.condition,
@@ -666,205 +725,185 @@ const Admin = () => {
         {/* Inquiries Tab */}
         {activeTab === 'inquiries' && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white/[0.02] backdrop-blur-sm rounded-2xl p-6 border border-white/[0.04]">
-            <h2 className="text-xl font-display font-bold text-white mb-6">Anfragen verwalten</h2>
-
-            {/* Inquiries management UI */}
-            <div className="text-center py-16">
-              <FileCheck className="w-12 h-12 text-white/10 mx-auto mb-4" />
-              <p className="text-white/30 text-sm">Anfragen-Management kommt bald</p>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+              <h2 className="text-xl font-display font-bold text-white">Anfragen verwalten</h2>
+              <div className="flex gap-1 bg-white/[0.03] p-1 rounded-lg border border-white/[0.06]">
+                {[{ key: 'all', label: 'Alle' }, { key: 'new', label: 'Neu' }, { key: 'read', label: 'Gelesen' }, { key: 'replied', label: 'Beantwortet' }].map(f => (
+                  <button key={f.key} onClick={() => setInquiryFilter(f.key as any)}
+                    className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${inquiryFilter === f.key ? 'bg-[#14A79D] text-white shadow-lg shadow-[#14A79D]/20' : 'text-white/40 hover:text-white/60'}`}>
+                    {f.label}
+                    {f.key === 'new' && inquiries.filter((i: any) => i.status === 'new').length > 0 && (
+                      <span className="ml-1.5 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">{inquiries.filter((i: any) => i.status === 'new').length}</span>
+                    )}
+                  </button>
+                ))}
+              </div>
             </div>
+
+            {/* Stats */}
+            <div className="grid grid-cols-3 gap-3 mb-6">
+              <div className="bg-white/[0.03] rounded-xl p-4 border border-white/[0.06]">
+                <p className="text-white/30 text-xs mb-1">Gesamt</p>
+                <p className="text-2xl font-bold text-white">{inquiries.length}</p>
+              </div>
+              <div className="bg-white/[0.03] rounded-xl p-4 border border-white/[0.06]">
+                <p className="text-white/30 text-xs mb-1">Ungelesen</p>
+                <p className="text-2xl font-bold text-amber-400">{inquiries.filter((i: any) => i.status === 'new').length}</p>
+              </div>
+              <div className="bg-white/[0.03] rounded-xl p-4 border border-white/[0.06]">
+                <p className="text-white/30 text-xs mb-1">Beantwortet</p>
+                <p className="text-2xl font-bold text-green-400">{inquiries.filter((i: any) => i.status === 'replied').length}</p>
+              </div>
+            </div>
+
+            {loadingInquiries ? (
+              <div className="flex flex-col items-center justify-center py-16">
+                <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }} className="w-8 h-8 border-2 border-[#14A79D]/20 border-t-[#14A79D] rounded-full mb-3" />
+                <p className="text-white/30 text-sm">Anfragen werden geladen...</p>
+              </div>
+            ) : inquiries.length === 0 ? (
+              <div className="text-center py-16">
+                <FileCheck className="w-12 h-12 text-white/10 mx-auto mb-4" />
+                <p className="text-white/40 text-sm mb-2">Keine Anfragen vorhanden</p>
+                <p className="text-white/20 text-xs">Anfragen werden hier angezeigt, sobald Kunden das Kontaktformular nutzen.</p>
+              </div>
+            ) : (
+              <div className="flex flex-col lg:flex-row gap-4">
+                {/* Inquiry List */}
+                <div className={`space-y-2 ${selectedInquiry ? 'lg:w-1/2' : 'w-full'}`}>
+                  {inquiries.map((inq: any) => (
+                    <motion.div key={inq.id} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }}
+                      onClick={() => { setSelectedInquiry(inq); if (inq.status === 'new') updateInquiryStatus(inq.id, 'read'); }}
+                      className={`p-4 rounded-xl border cursor-pointer transition-all duration-200 ${selectedInquiry?.id === inq.id
+                        ? 'bg-[#14A79D]/10 border-[#14A79D]/30'
+                        : 'bg-white/[0.02] border-white/[0.06] hover:border-white/[0.12] hover:bg-white/[0.04]'}`}>
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex items-center gap-2">
+                          {inq.status === 'new' && <span className="w-2 h-2 bg-amber-400 rounded-full animate-pulse" />}
+                          <h4 className="text-white font-medium text-sm truncate">{inq.name || 'Unbekannt'}</h4>
+                        </div>
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${inq.status === 'new' ? 'bg-amber-500/20 text-amber-400' : inq.status === 'read' ? 'bg-blue-500/20 text-blue-400' : 'bg-green-500/20 text-green-400'}`}>
+                          {inq.status === 'new' ? 'Neu' : inq.status === 'read' ? 'Gelesen' : 'Beantwortet'}
+                        </span>
+                      </div>
+                      <p className="text-white/50 text-xs mb-1 truncate">{inq.email || inq.phone || ''}</p>
+                      <p className="text-white/30 text-xs truncate">{inq.message?.substring(0, 80) || ''}...</p>
+                      <p className="text-white/20 text-[10px] mt-2">{inq.created_at ? new Date(inq.created_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}</p>
+                    </motion.div>
+                  ))}
+                </div>
+
+                {/* Inquiry Detail */}
+                {selectedInquiry && (
+                  <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
+                    className="lg:w-1/2 bg-white/[0.03] rounded-xl p-6 border border-white/[0.06] sticky top-24 self-start">
+                    <div className="flex justify-between items-start mb-6">
+                      <div>
+                        <h3 className="text-lg font-semibold text-white">{selectedInquiry.name}</h3>
+                        <p className="text-white/40 text-sm">{selectedInquiry.email}</p>
+                        {selectedInquiry.phone && <p className="text-white/30 text-xs mt-1">{selectedInquiry.phone}</p>}
+                      </div>
+                      <button onClick={() => setSelectedInquiry(null)} className="text-white/30 hover:text-white/60 transition-colors">
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+                    {selectedInquiry.subject && (
+                      <div className="mb-4">
+                        <p className="text-white/30 text-xs mb-1">Betreff</p>
+                        <p className="text-white text-sm">{selectedInquiry.subject}</p>
+                      </div>
+                    )}
+                    {selectedInquiry.car_interest && (
+                      <div className="mb-4">
+                        <p className="text-white/30 text-xs mb-1">Fahrzeug-Interesse</p>
+                        <p className="text-[#14A79D] text-sm font-medium">{selectedInquiry.car_interest}</p>
+                      </div>
+                    )}
+                    <div className="mb-6">
+                      <p className="text-white/30 text-xs mb-2">Nachricht</p>
+                      <div className="bg-white/[0.03] rounded-lg p-4 border border-white/[0.06]">
+                        <p className="text-white/70 text-sm whitespace-pre-wrap">{selectedInquiry.message}</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      {selectedInquiry.status !== 'replied' && (
+                        <button onClick={() => updateInquiryStatus(selectedInquiry.id, 'replied')}
+                          className="flex-1 bg-[#14A79D] hover:bg-[#14A79D]/80 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2">
+                          <Check className="w-4 h-4" /> Als beantwortet markieren
+                        </button>
+                      )}
+                      <button onClick={() => deleteInquiry(selectedInquiry.id)}
+                        className="bg-red-500/10 hover:bg-red-500/20 text-red-400 px-4 py-2 rounded-lg text-sm transition-colors">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </div>
+            )}
           </motion.div>
         )}
 
         {/* Gallery Tab */}
         {activeTab === 'gallery' && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white/[0.02] backdrop-blur-sm rounded-2xl p-6 border border-white/[0.04]">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-              <h2 className="text-2xl font-bold text-white mb-4 md:mb-0">Galerie-Management</h2>
-
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={() => {
-                    setIsSelectionMode(!isSelectionMode);
-                    if (isSelectionMode) {
-                      setSelectedImages([]);
-                    }
-                  }}
-                  className={`px-3 py-2 rounded-md flex items-center gap-1 ${isSelectionMode
-                    ? 'bg-orange-500 text-white'
-                    : 'bg-[#16181f] text-gray-300 hover:bg-gray-700 hover:text-white'
-                    }`}
-                >
-                  <CheckSquare className="w-4 h-4" />
-                  <span>Auswählen</span>
-                </button>
-
-                <button
-                  onClick={deleteMultipleGalleryImages}
-                  disabled={selectedImages.length === 0}
-                  className={`px-3 py-2 rounded-md flex items-center gap-1 ${selectedImages.length > 0
-                    ? 'bg-red-500 text-white hover:bg-red-600'
-                    : 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                    }`}
-                >
-                  <Trash className="w-4 h-4" />
-                  <span>{selectedImages.length > 0 ? `Löschen (${selectedImages.length})` : 'Löschen'}</span>
-                </button>
-              </div>
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+            {/* Stats Row */}
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { label: 'Gesamt', value: galleryImages.length, color: 'text-white' },
+                { label: 'Verknüpft', value: galleryImages.filter(img => img.car_id).length, color: 'text-[#14A79D]' },
+                { label: 'Kategorien', value: galleryImages.length > 0 ? new Set(galleryImages.map((img: any) => img.category)).size : 0, color: 'text-amber-400' }
+              ].map((stat, i) => (
+                <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
+                  className="bg-white/[0.02] rounded-xl p-4 border border-white/[0.06]">
+                  <p className="text-white/30 text-[11px] uppercase tracking-wider mb-1">{stat.label}</p>
+                  <p className={`text-2xl font-bold ${stat.color}`}>{stat.value}</p>
+                </motion.div>
+              ))}
             </div>
 
-            {/* Dashboard stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-              <div className="bg-gradient-to-r from-[#1a1c25] to-[#1a1c25]/90 rounded-lg p-4 border border-[#14A79D]/20">
-                <h3 className="text-gray-400 text-sm mb-2">Bilder insgesamt</h3>
-                <p className="text-white text-2xl font-bold">{galleryImages.length}</p>
+            {/* Upload Section - Compact */}
+            <div id="upload-section" className="bg-white/[0.02] rounded-2xl border border-white/[0.06] overflow-hidden">
+              <div className="p-5 border-b border-white/[0.06] flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Upload className="w-4 h-4 text-[#14A79D]" />
+                  <h3 className="text-sm font-semibold text-white">Bilder hochladen</h3>
+                </div>
+                <p className="text-white/20 text-xs">JPG, PNG, WebP • max 10MB</p>
               </div>
-
-              <div className="bg-gradient-to-r from-[#1a1c25] to-[#1a1c25]/90 rounded-lg p-4 border border-[#14A79D]/20">
-                <h3 className="text-gray-400 text-sm mb-2">Mit Fahrzeugen verknüpft</h3>
-                <p className="text-white text-2xl font-bold">
-                  {galleryImages.filter(img => img.car_id).length}
-                </p>
-              </div>
-
-              <div className="bg-gradient-to-r from-[#1a1c25] to-[#1a1c25]/90 rounded-lg p-4 border border-[#14A79D]/20">
-                <h3 className="text-gray-400 text-sm mb-2">Häufigste Kategorie</h3>
-                <p className="text-white text-2xl font-bold">
-                  {galleryImages.length > 0 ?
-                    Object.entries(
-                      galleryImages.reduce((acc, img) => {
-                        acc[img.category] = (acc[img.category] || 0) + 1;
-                        return acc;
-                      }, {})
-                    ).sort((a, b) => b[1] - a[1])[0][0]
-                    : 'Keine Daten'}
-                </p>
-              </div>
-            </div>
-
-            {/* Upload Section */}
-            <div id="upload-section" className="bg-gradient-to-b from-[#16181f]/90 to-[#16181f] p-8 rounded-xl shadow-lg border border-[#14A79D]/10 transition-all hover:border-[#14A79D]/30 mb-8">
-              <div className="flex items-center mb-6">
-                <Upload className="w-6 h-6 text-[#14A79D] mr-3" />
-                <h3 className="text-xl font-bold text-white">Bilderverwaltung</h3>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-6">
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-gray-300 mb-2 font-medium">Kategorie auswählen</label>
-                      <div className="relative">
-                        <select
-                          value={selectedCategory}
-                          onChange={(e) => setSelectedCategory(e.target.value)}
-                          className="w-full bg-[#1a1c25] text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#14A79D] transition-all border border-gray-700 hover:border-[#14A79D]/50 appearance-none"
-                        >
-                          <option value="">Bitte Kategorie auswählen</option>
-                          {categories.map((category) => (
-                            <option key={category} value={category}>
-                              {category}
-                            </option>
-                          ))}
-                        </select>
-                        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                          <ChevronDown className="h-5 w-5 text-gray-400" />
-                        </div>
-                      </div>
-
-                      {!selectedCategory && (
-                        <p className="text-gray-500 text-xs mt-1.5">Diese Information ist erforderlich für die Organisation</p>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="block text-gray-300 mb-2">Fahrzeug zuordnen (optional)</label>
-                      <div className="relative">
-                        <select
-                          value={selectedCarForGallery?.id || ""}
-                          onChange={(e) => {
-                            const car = cars.find(c => c.id === e.target.value);
-                            setSelectedCarForGallery(car || null);
-                          }}
-                          className="w-full bg-[#1a1c25] text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#14A79D] transition-all border border-gray-700 hover:border-[#14A79D]/50 appearance-none"
-                        >
-                          <option value="">Kein Fahrzeug zuordnen</option>
-                          {cars.map((car) => (
-                            <option key={car.id} value={car.id}>
-                              {car.brand} {car.model} ({car.year})
-                            </option>
-                          ))}
-                        </select>
-                        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                          <ChevronDown className="h-5 w-5 text-gray-400" />
-                        </div>
-                      </div>
-                      <p className="text-gray-500 text-xs mt-1.5">
-                        {selectedCarForGallery
-                          ? `Bilder werden mit ${selectedCarForGallery.brand} ${selectedCarForGallery.model} verknüpft`
-                          : "Bilder werden keinem spezifischen Fahrzeug zugeordnet"}
-                      </p>
+              <div className="p-5 grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-white/40 text-xs mb-1.5">Kategorie *</label>
+                    <div className="relative">
+                      <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}
+                        className="w-full bg-white/[0.04] text-white px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#14A79D]/50 border border-white/[0.08] hover:border-white/[0.15] appearance-none transition-colors">
+                        <option value="">Auswählen...</option>
+                        {categories.map((cat) => (<option key={cat} value={cat}>{cat}</option>))}
+                      </select>
+                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 pointer-events-none" />
                     </div>
                   </div>
-
-                  {/* Übersicht und Tipps */}
-                  <div className="bg-gradient-to-r from-[#14A79D]/10 to-[#14A79D]/5 rounded-lg p-5 border border-[#14A79D]/20">
-                    <h4 className="font-medium text-[#14A79D] mb-3 flex items-center">
-                      <Info className="w-4 h-4 mr-2" />
-                      Tipps für optimale Bilder
-                    </h4>
-                    <ul className="text-gray-300 text-sm space-y-2.5">
-                      <li className="flex items-start">
-                        <Check className="w-4 h-4 text-[#14A79D] mr-2 mt-0.5 flex-shrink-0" />
-                        <span>Verwende Bilder mit hoher Auflösung für beste Qualität</span>
-                      </li>
-                      <li className="flex items-start">
-                        <Check className="w-4 h-4 text-[#14A79D] mr-2 mt-0.5 flex-shrink-0" />
-                        <span>Wähle eine passende Kategorie für einfachere Navigation</span>
-                      </li>
-                      <li className="flex items-start">
-                        <Check className="w-4 h-4 text-[#14A79D] mr-2 mt-0.5 flex-shrink-0" />
-                        <span>Aktiviere das Wasserzeichen zum Schutz der Markenrechte</span>
-                      </li>
-                      <li className="flex items-start">
-                        <Check className="w-4 h-4 text-[#14A79D] mr-2 mt-0.5 flex-shrink-0" />
-                        <span>Ordne Bilder, wenn möglich, einem Fahrzeug zu für bessere Organisation</span>
-                      </li>
-                    </ul>
-
-                    <div className="mt-4 pt-4 border-t border-[#14A79D]/20">
-                      <div className="flex items-center text-sm text-[#14A79D]">
-                        <FileCheck className="w-4 h-4 mr-2" />
-                        <span>Unterstützte Formate: JPG, PNG, WebP</span>
-                      </div>
+                  <div>
+                    <label className="block text-white/40 text-xs mb-1.5">Fahrzeug (optional)</label>
+                    <div className="relative">
+                      <select value={selectedCarForGallery?.id || ""} onChange={(e) => { const car = cars.find(c => c.id === e.target.value); setSelectedCarForGallery(car || null); }}
+                        className="w-full bg-white/[0.04] text-white px-3 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#14A79D]/50 border border-white/[0.08] hover:border-white/[0.15] appearance-none transition-colors">
+                        <option value="">Kein Fahrzeug</option>
+                        {cars.map((car) => (<option key={car.id} value={car.id}>{car.brand} {car.model} ({car.year})</option>))}
+                      </select>
+                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 pointer-events-none" />
                     </div>
                   </div>
                 </div>
-
-                <div className="relative">
-                  <ImageUpload
-                    onUpload={uploadGalleryImage}
-                    bucketName="images"
-                    enableWatermarkOption={true}
-                    watermarkPosition="topLeft"
-                    maxFiles={10}
-                    className="bg-[#1a1c25]/60 backdrop-blur-sm rounded-lg shadow-md p-1"
-                  />
-
+                <div className="md:col-span-2 relative">
+                  <ImageUpload onUpload={uploadGalleryImage} bucketName="images" enableWatermarkOption={true} watermarkPosition="topLeft" maxFiles={10} className="rounded-lg" />
                   {!selectedCategory && (
-                    <div className="absolute top-0 left-0 right-0 bottom-0 bg-black/70 backdrop-blur-sm flex items-center justify-center rounded-lg z-10">
-                      <div className="text-center p-6 bg-[#16181f]/90 rounded-lg max-w-xs border border-[#14A79D]/30">
-                        <AlertTriangle className="w-8 h-8 text-amber-400 mx-auto mb-2" />
-                        <h4 className="text-white font-medium text-lg mb-2">Kategorie erforderlich</h4>
-                        <p className="text-gray-400 text-sm mb-4">
-                          Bitte wählen Sie eine Kategorie aus, bevor Sie Bilder hochladen.
-                        </p>
-                        <button
-                          onClick={() => document.querySelector('select')?.focus()}
-                          className="bg-[#14A79D] hover:bg-[#14A79D]/90 text-white px-4 py-2 rounded-md transition-colors text-sm"
-                        >
-                          Kategorie auswählen
-                        </button>
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center rounded-lg z-10">
+                      <div className="text-center px-6">
+                        <AlertTriangle className="w-6 h-6 text-amber-400 mx-auto mb-2" />
+                        <p className="text-white text-sm font-medium mb-1">Kategorie wählen</p>
+                        <p className="text-white/40 text-xs">Bitte zuerst eine Kategorie auswählen</p>
                       </div>
                     </div>
                   )}
@@ -872,326 +911,124 @@ const Admin = () => {
               </div>
             </div>
 
-            {/* Gallery Management Header */}
-            <div className="flex flex-wrap items-center justify-between bg-[#16181f] p-5 rounded-t-xl border-b border-gray-700 mb-1 sticky top-20 z-10">
-              <div className="flex items-center">
-                <ImageIcon className="w-5 h-5 text-[#14A79D] mr-2" />
-                <h3 className="text-xl font-bold text-white">
-                  Galerie
-                  {galleryImages.length > 0 &&
-                    <span className="text-[#14A79D] text-base ml-2 font-normal">
-                      ({galleryImages.length} {galleryImages.length === 1 ? 'Bild' : 'Bilder'})
-                    </span>
-                  }
-                </h3>
-              </div>
-
-              <div className="flex flex-wrap gap-3 mt-2 md:mt-0">
-                {/* Filter by category */}
-                <select
-                  value={filterCategory}
-                  onChange={(e) => setFilterCategory(e.target.value)}
-                  className="bg-[#1a1c25] text-white py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-[#14A79D] border border-gray-700"
-                >
-                  <option value="">Alle Kategorien</option>
-                  {categories.map((category) => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
-                  ))}
-                </select>
-
-                {/* Sort options */}
-                <select
-                  value={`${gallerySort.field}_${gallerySort.direction}`}
-                  onChange={(e) => {
-                    const [field, direction] = e.target.value.split('_');
-                    setGallerySort({
-                      field,
-                      direction: direction as 'asc' | 'desc'
-                    });
-                    fetchGalleryImages();
-                  }}
-                  className="bg-[#1a1c25] text-white py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-[#14A79D] border border-gray-700"
-                >
-                  <option value="created_at_desc">Neueste zuerst</option>
-                  <option value="created_at_asc">Älteste zuerst</option>
-                  <option value="category_asc">Kategorie (A-Z)</option>
-                  <option value="category_desc">Kategorie (Z-A)</option>
-                </select>
-
-                {/* View toggle */}
-                <div className="flex rounded-md overflow-hidden border border-gray-700">
-                  <button
-                    onClick={() => setGalleryView('grid')}
-                    className={`px-3 py-2 transition-colors ${galleryView === 'grid'
-                      ? 'bg-[#14A79D] text-white'
-                      : 'bg-[#1a1c25] text-gray-300 hover:bg-[#14A79D]/20'
-                      }`}
-                  >
-                    <Grid className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={() => setGalleryView('list')}
-                    className={`px-3 py-2 transition-colors ${galleryView === 'list'
-                      ? 'bg-[#14A79D] text-white'
-                      : 'bg-[#1a1c25] text-gray-300 hover:bg-[#14A79D]/20'
-                      }`}
-                  >
-                    <List className="w-5 h-5" />
-                  </button>
+            {/* Gallery Grid with Inline Controls */}
+            <div className="bg-white/[0.02] rounded-2xl border border-white/[0.06] overflow-hidden">
+              {/* Filter Bar */}
+              <div className="p-4 border-b border-white/[0.06] flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <ImageIcon className="w-4 h-4 text-[#14A79D]" />
+                  <span className="text-white text-sm font-medium">{galleryImages.length} Bilder</span>
                 </div>
-
-                {/* Select mode toggle and delete button */}
-                <div className="flex border border-gray-700 rounded-md overflow-hidden">
-                  <button
-                    onClick={() => {
-                      setIsSelectionMode(!isSelectionMode);
-                      if (isSelectionMode) {
-                        setSelectedImages([]);
-                      }
-                    }}
-                    className={`px-3 py-2 transition-colors ${isSelectionMode
-                      ? 'bg-orange-500 text-white'
-                      : 'bg-[#1a1c25] text-gray-300 hover:bg-[#1a1c25]/80'
-                      }`}
-                    title="Mehrfachauswahl aktivieren"
-                  >
-                    <CheckSquare className="w-5 h-5" />
+                <div className="flex items-center gap-2">
+                  <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)}
+                    className="bg-white/[0.04] text-white/70 py-1.5 px-3 rounded-lg text-xs focus:outline-none border border-white/[0.08] appearance-none">
+                    <option value="">Alle</option>
+                    {categories.map((cat) => (<option key={cat} value={cat}>{cat}</option>))}
+                  </select>
+                  <select value={`${gallerySort.field}_${gallerySort.direction}`} onChange={(e) => { const [field, direction] = e.target.value.split('_'); setGallerySort({ field, direction: direction as 'asc' | 'desc' }); }}
+                    className="bg-white/[0.04] text-white/70 py-1.5 px-3 rounded-lg text-xs focus:outline-none border border-white/[0.08] appearance-none">
+                    <option value="created_at_desc">Neueste</option>
+                    <option value="created_at_asc">Älteste</option>
+                    <option value="category_asc">Kategorie A-Z</option>
+                  </select>
+                  <div className="flex rounded-lg overflow-hidden border border-white/[0.08]">
+                    <button onClick={() => setGalleryView('grid')} className={`p-1.5 transition-colors ${galleryView === 'grid' ? 'bg-[#14A79D] text-white' : 'text-white/30 hover:text-white/60'}`}>
+                      <Grid className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => setGalleryView('list')} className={`p-1.5 transition-colors ${galleryView === 'list' ? 'bg-[#14A79D] text-white' : 'text-white/30 hover:text-white/60'}`}>
+                      <List className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <button onClick={() => { setIsSelectionMode(!isSelectionMode); if (isSelectionMode) setSelectedImages([]); }}
+                    className={`p-1.5 rounded-lg border transition-colors ${isSelectionMode ? 'bg-amber-500 text-white border-amber-500' : 'text-white/30 border-white/[0.08] hover:text-white/60'}`}>
+                    <CheckSquare className="w-4 h-4" />
                   </button>
-
-                  <button
-                    onClick={deleteMultipleGalleryImages}
-                    disabled={selectedImages.length === 0}
-                    className={`px-3 py-2 flex items-center transition-colors ${selectedImages.length > 0
-                      ? 'bg-red-500 text-white hover:bg-red-600'
-                      : 'bg-[#1a1c25] text-gray-500 cursor-not-allowed'
-                      }`}
-                    title="Ausgewählte Bilder löschen"
-                  >
-                    <Trash className="w-5 h-5 mr-1" />
-                    {selectedImages.length > 0 && selectedImages.length}
-                  </button>
+                  {selectedImages.length > 0 && (
+                    <button onClick={deleteMultipleGalleryImages} className="flex items-center gap-1 px-3 py-1.5 bg-red-500/20 text-red-400 rounded-lg text-xs hover:bg-red-500/30 transition-colors">
+                      <Trash className="w-3.5 h-3.5" /> {selectedImages.length}
+                    </button>
+                  )}
                 </div>
               </div>
-            </div>
 
-            {/* Gallery Images List */}
-            <div>
-              {loadingGallery ? (
-                <div className="flex flex-col items-center justify-center py-12">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#14A79D] mb-3"></div>
-                  <p className="text-gray-400">Bilder werden geladen...</p>
-                </div>
-              ) : galleryImages.length === 0 ? (
-                <div className="bg-[#1a1c25]/80 rounded-lg p-8 text-center border border-gray-700">
-                  <ImageIcon className="w-12 h-12 mx-auto text-gray-500 mb-4" />
-                  <h3 className="text-xl font-medium text-white mb-2">Keine Bilder vorhanden</h3>
-                  <p className="text-gray-400 mb-6">Laden Sie Bilder hoch, um sie hier anzuzeigen.</p>
-                  <button
-                    onClick={() => document.getElementById('upload-section')?.scrollIntoView({ behavior: 'smooth' })}
-                    className="px-4 py-2 bg-[#14A79D] text-white rounded-md hover:bg-[#14A79D]/90 transition-colors"
-                  >
-                    Zum Upload-Bereich
-                  </button>
-                </div>
-              ) : galleryView === 'grid' ? (
-                <div className="bg-[#1a1c25]/80 rounded-lg p-4 border border-gray-700">
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 2xl:grid-cols-6 gap-4">
-                    {galleryImages.map((image) => (
-                      <div
-                        key={image.id}
-                        className={`relative group bg-gray-800 rounded-lg overflow-hidden shadow-sm hover:shadow-lg transform hover:scale-[1.03] transition-all duration-200 ${isSelectionMode && selectedImages.includes(image.id)
-                          ? 'ring-2 ring-[#14A79D] ring-offset-1 ring-offset-gray-900'
-                          : ''
-                          }`}
-                        onClick={() => isSelectionMode && toggleImageSelection(image.id)}
-                      >
-                        <div className="aspect-square relative overflow-hidden">
-                          <img
-                            src={image.url}
-                            alt={`Image ${image.id}`}
-                            loading="lazy"
-                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                          />
-
-                          {/* Overlay und Informationen beim Hover */}
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300">
-                            <div className="absolute bottom-0 left-0 right-0 p-3">
-                              <div className="flex justify-between items-center text-white mb-2">
-                                <span className="font-medium truncate">{image.category ? image.category : "Keine Kategorie"}</span>
-                                <div className="flex space-x-2">
-                                  {!isSelectionMode && (
-                                    <>
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          deleteGalleryImage(image.id);
-                                        }}
-                                        className="p-1.5 bg-red-500/90 rounded-full hover:bg-red-600 transition-colors"
-                                      >
-                                        <Trash2 className="w-4 h-4" />
-                                      </button>
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setEditingCar(image);
-                                          setActiveTab('basic');
-                                        }}
-                                        className="p-1.5 bg-gray-600/90 rounded-full hover:bg-gray-700 transition-colors"
-                                      >
-                                        <Edit className="w-4 h-4" />
-                                      </button>
-                                    </>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Bilddetails immer sichtbar (unten) */}
-                          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent px-3 py-2">
-                            <div className="flex justify-between items-center text-xs text-gray-300">
-                              <span>{new Date(image.created_at).toLocaleDateString()}</span>
-                              <span className={image.car_id ? 'text-green-400' : 'text-gray-500'}>
-                                {image.car_id ? (
-                                  <span className="flex items-center">
-                                    <Car className="w-3 h-3 mr-1" />
-                                    Fahrzeug
-                                  </span>
-                                ) : 'Kein Fahrzeug'}
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* Auswahlindikator */}
-                          {isSelectionMode && (
-                            <div className="absolute top-2 left-2">
-                              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${selectedImages.includes(image.id)
-                                ? 'bg-[#14A79D] border-[#14A79D]'
-                                : 'bg-black/50 border-gray-300/50'
-                                }`}>
-                                {selectedImages.includes(image.id) && <Check className="w-4 h-4 text-white" />}
-                              </div>
+              {/* Images */}
+              <div className="p-4">
+                {loadingGallery ? (
+                  <div className="flex flex-col items-center py-16">
+                    <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }} className="w-8 h-8 border-2 border-[#14A79D]/20 border-t-[#14A79D] rounded-full mb-3" />
+                    <p className="text-white/30 text-sm">Laden...</p>
+                  </div>
+                ) : galleryImages.length === 0 ? (
+                  <div className="text-center py-16">
+                    <ImageIcon className="w-10 h-10 text-white/10 mx-auto mb-3" />
+                    <p className="text-white/30 text-sm">Keine Bilder vorhanden</p>
+                    <button onClick={() => document.getElementById('upload-section')?.scrollIntoView({ behavior: 'smooth' })}
+                      className="mt-3 text-[#14A79D] text-xs hover:underline">↑ Bilder hochladen</button>
+                  </div>
+                ) : galleryView === 'grid' ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-6 gap-3">
+                    {galleryImages.map((image, idx) => (
+                      <motion.div key={image.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: idx * 0.02 }}
+                        className={`relative group rounded-xl overflow-hidden cursor-pointer ${isSelectionMode && selectedImages.includes(image.id) ? 'ring-2 ring-[#14A79D] ring-offset-2 ring-offset-[#050505]' : ''}`}
+                        onClick={() => isSelectionMode && toggleImageSelection(image.id)}>
+                        <div className="aspect-square">
+                          <img src={image.url} alt="" loading="lazy" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                        </div>
+                        {/* Hover overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col justify-end p-3">
+                          <p className="text-white text-xs font-medium truncate">{image.category || 'Ohne Kategorie'}</p>
+                          <p className="text-white/40 text-[10px]">{new Date(image.created_at).toLocaleDateString('de-DE')}</p>
+                          {!isSelectionMode && (
+                            <div className="flex gap-1.5 mt-2">
+                              <button onClick={(e) => { e.stopPropagation(); deleteGalleryImage(image.id); }}
+                                className="p-1.5 bg-red-500/80 rounded-lg hover:bg-red-500 transition-colors"><Trash2 className="w-3.5 h-3.5 text-white" /></button>
                             </div>
                           )}
                         </div>
+                        {/* Selection indicator */}
+                        {isSelectionMode && (
+                          <div className="absolute top-2 left-2">
+                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${selectedImages.includes(image.id) ? 'bg-[#14A79D] border-[#14A79D]' : 'bg-black/40 border-white/30'}`}>
+                              {selectedImages.includes(image.id) && <Check className="w-3 h-3 text-white" />}
+                            </div>
+                          </div>
+                        )}
+                        {/* Car badge */}
+                        {image.car_id && (
+                          <div className="absolute top-2 right-2 bg-[#14A79D]/80 backdrop-blur-sm rounded-full p-1">
+                            <Car className="w-3 h-3 text-white" />
+                          </div>
+                        )}
+                      </motion.div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    {galleryImages.map((image) => (
+                      <div key={image.id} onClick={() => isSelectionMode && toggleImageSelection(image.id)}
+                        className={`flex items-center gap-4 p-3 rounded-xl transition-colors cursor-pointer ${isSelectionMode && selectedImages.includes(image.id) ? 'bg-[#14A79D]/10' : 'hover:bg-white/[0.03]'}`}>
+                        {isSelectionMode && (
+                          <div className={`w-5 h-5 rounded border flex items-center justify-center flex-shrink-0 ${selectedImages.includes(image.id) ? 'bg-[#14A79D] border-[#14A79D]' : 'border-white/20'}`}>
+                            {selectedImages.includes(image.id) && <Check className="w-3 h-3 text-white" />}
+                          </div>
+                        )}
+                        <div className="w-14 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-white/[0.05]">
+                          <img src={image.url} alt="" className="w-full h-full object-cover" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white text-sm truncate">{image.category || 'Ohne Kategorie'}</p>
+                          <p className="text-white/30 text-xs">{new Date(image.created_at).toLocaleDateString('de-DE')}</p>
+                        </div>
+                        {image.car_id && <span className="text-[#14A79D] text-xs flex items-center gap-1"><Car className="w-3 h-3" />Verknüpft</span>}
+                        {!isSelectionMode && (
+                          <button onClick={(e) => { e.stopPropagation(); deleteGalleryImage(image.id); }}
+                            className="p-1.5 text-white/20 hover:text-red-400 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                        )}
                       </div>
                     ))}
                   </div>
-                </div>
-              ) : (
-                <div className="bg-[#1a1c25]/80 rounded-lg border border-gray-700 overflow-hidden">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="bg-gray-800/80">
-                        {isSelectionMode && (
-                          <th className="px-3 py-3 text-left">
-                            <div
-                              onClick={() => {
-                                setSelectedImages(galleryImages.map(img => img.id));
-                              }}
-                              className={`w-5 h-5 rounded border cursor-pointer flex items-center justify-center transition-colors ${selectedImages.length === galleryImages.length && galleryImages.length > 0
-                                ? 'bg-[#14A79D] border-[#14A79D]'
-                                : 'bg-gray-700 border-gray-600 hover:bg-gray-600'
-                                }`}
-                            >
-                              {selectedImages.length === galleryImages.length && galleryImages.length > 0 && (
-                                <Check className="w-3 h-3 text-white" />
-                              )}
-                            </div>
-                          </th>
-                        )}
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Bild</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Kategorie</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Fahrzeug</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Datum</th>
-                        {!isSelectionMode && (
-                          <th className="px-4 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">Aktionen</th>
-                        )}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-700/50">
-                      {galleryImages.map((image, index) => (
-                        <tr
-                          key={image.id}
-                          className={`hover:bg-gray-800/40 transition-colors ${isSelectionMode && selectedImages.includes(image.id) ? 'bg-[#14A79D]/10' : ''
-                            }`}
-                          onClick={() => isSelectionMode && toggleImageSelection(image.id)}
-                        >
-                          {isSelectionMode && (
-                            <td className="pl-3 pr-2 py-3">
-                              <div
-                                className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${selectedImages.includes(image.id)
-                                  ? 'bg-[#14A79D] border-[#14A79D]'
-                                  : 'bg-gray-700 border-gray-600'
-                                  }`}
-                              >
-                                {selectedImages.includes(image.id) && <Check className="w-3 h-3 text-white" />}
-                              </div>
-                            </td>
-                          )}
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <div className="h-12 w-16 flex-shrink-0 overflow-hidden rounded bg-gray-700">
-                                <img src={image.url} alt="" className="h-12 w-16 object-cover" />
-                              </div>
-                              <div className="ml-3">
-                                <div className="text-sm font-medium text-gray-300 truncate max-w-[150px]">
-                                  {image.filename || "Kein Name"}
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <span className="inline-flex text-xs leading-5 font-semibold rounded-full px-2.5 py-1 bg-gray-700 text-gray-300">
-                              {image.category ? image.category : "Keine Kategorie"}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-300">
-                            {image.car_id ? (
-                              <span className="inline-flex items-center text-green-400">
-                                <Car className="w-3 h-3 mr-1.5" />
-                                Zugewiesen
-                              </span>
-                            ) : (
-                              <span className="text-gray-500">Nicht zugewiesen</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-300">
-                            {new Date(image.created_at).toLocaleDateString()}
-                          </td>
-                          {!isSelectionMode && (
-                            <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium space-x-1">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setEditingCar(image);
-                                  setActiveTab('basic');
-                                }}
-                                className="px-3 py-1.5 inline-flex items-center text-gray-300 hover:text-white bg-gray-700 hover:bg-gray-600 rounded transition-colors"
-                              >
-                                <Edit className="w-3.5 h-3.5 mr-1.5" />
-                                Bearbeiten
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  deleteGalleryImage(image.id);
-                                }}
-                                className="px-3 py-1.5 inline-flex items-center text-red-300 hover:text-white bg-red-900/30 hover:bg-red-700/80 rounded transition-colors ml-1"
-                              >
-                                <Trash2 className="w-3.5 h-3.5 mr-1.5" />
-                                Löschen
-                              </button>
-                            </td>
-                          )}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </motion.div>
         )}
@@ -1207,16 +1044,20 @@ const Admin = () => {
             className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-start justify-center z-50 p-4 overflow-y-auto"
           >
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
-              className="bg-[#16181f] rounded-lg w-full max-w-7xl my-8"
+              initial={{ opacity: 0, y: 20, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.98 }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
+              className="bg-[#0a0a0f]/95 backdrop-blur-xl rounded-2xl w-full max-w-7xl my-8 border border-white/[0.06] shadow-2xl shadow-black/50"
             >
-              <div className="p-6 border-b border-gray-800">
+              <div className="p-6 border-b border-white/[0.06]">
                 <div className="flex justify-between items-center">
-                  <h3 className="text-xl font-semibold text-white">
-                    {editingCar && editingCar.id ? 'Fahrzeug bearbeiten' : 'Neues Fahrzeug'}
-                  </h3>
+                  <div>
+                    <h3 className="text-xl font-display font-bold text-white">
+                      {editingCar && editingCar.id ? 'Fahrzeug bearbeiten' : 'Neues Fahrzeug erstellen'}
+                    </h3>
+                    <p className="text-white/30 text-sm mt-1">{editingCar?.brand && editingCar?.model ? `${editingCar.brand} ${editingCar.model}` : 'Füllen Sie die Fahrzeugdaten aus'}</p>
+                  </div>
                   <button
                     onClick={() => {
                       if (isAddingCar && !window.confirm('Sind Sie sicher? Ungespeicherte Änderungen gehen verloren.')) {
@@ -1225,90 +1066,55 @@ const Admin = () => {
                       setEditingCar(null);
                       setIsAddingCar(false);
                     }}
-                    className="text-gray-400 hover:text-white transition-colors"
+                    className="p-2 rounded-xl text-white/30 hover:text-white hover:bg-white/[0.05] transition-all"
                   >
-                    <X className="w-6 h-6" />
+                    <X className="w-5 h-5" />
                   </button>
                 </div>
 
-                {/* Fortschrittsanzeige für Datenerfassung */}
+                {/* Progress bar */}
                 {isAddingCar && (
-                  <div className="mt-4 mb-2">
-                    <div className="text-sm text-gray-400 mb-1 flex justify-between">
-                      <span>Datenerfassung</span>
-                      <span className="text-right">
-                        {calculateCompletionPercentage()}% abgeschlossen
-                      </span>
+                  <div className="mt-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-white/30 text-xs">Fortschritt</span>
+                      <span className="text-[#14A79D] text-xs font-medium">{calculateCompletionPercentage()}%</span>
                     </div>
-                    <div className="w-full bg-gray-700 rounded-full h-2.5">
-                      <div
-                        className="bg-gradient-to-r from-[#14A79D] to-orange-400 h-2.5 rounded-full transition-all duration-500 ease-out"
-                        style={{ width: `${calculateCompletionPercentage()}%` }}
-                      ></div>
+                    <div className="w-full bg-white/[0.04] rounded-full h-1.5">
+                      <motion.div
+                        className="bg-gradient-to-r from-[#14A79D] to-[#14A79D]/60 h-1.5 rounded-full"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${calculateCompletionPercentage()}%` }}
+                        transition={{ duration: 0.5, ease: 'easeOut' }}
+                      />
                     </div>
                   </div>
                 )}
 
-                {/* Edit/Preview Mode Toggle */}
-                <div className="flex gap-4 mt-6 flex-wrap">
-                  <button
-                    onClick={() => setActiveTab('basic')}
-                    className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${activeTab === 'basic'
-                      ? 'bg-[#14A79D] text-white'
-                      : 'text-gray-400 hover:text-white hover:bg-gray-800'
-                      }`}
-                  >
-                    <File className="w-4 h-4" />
-                    Basis
-                    {!hasRequiredBasicFields() && <span className="w-2 h-2 bg-red-500 rounded-full"></span>}
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('specs')}
-                    className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${activeTab === 'specs'
-                      ? 'bg-[#14A79D] text-white'
-                      : 'text-gray-400 hover:text-white hover:bg-gray-800'
-                      }`}
-                  >
-                    <Settings className="w-4 h-4" />
-                    Spezifikationen
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('features')}
-                    className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${activeTab === 'features'
-                      ? 'bg-[#14A79D] text-white'
-                      : 'text-gray-400 hover:text-white hover:bg-gray-800'
-                      }`}
-                  >
-                    <List className="w-4 h-4" />
-                    Ausstattung
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('condition')}
-                    className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${activeTab === 'condition'
-                      ? 'bg-[#14A79D] text-white'
-                      : 'text-gray-400 hover:text-white hover:bg-gray-800'
-                      }`}
-                  >
-                    <Activity className="w-4 h-4" />
-                    Zustand
-                  </button>
-                  <button
-                    onClick={() => {
-                      // Prüfen ob alle Pflichtfelder ausgefüllt sind, sonst Warnung anzeigen
-                      if (!hasRequiredBasicFields()) {
-                        toast.error('Bitte füllen Sie erst alle Pflichtfelder aus');
-                        setActiveTab('basic');
-                        return;
-                      }
-                      setActiveTab('preview');
-                    }}
-                    className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ml-auto ${activeTab === 'preview'
-                      ? 'bg-orange-400 text-white'
-                      : 'text-gray-400 hover:text-white hover:bg-gray-800'
-                      }`}
-                  >
-                    <Eye className="w-4 h-4" />
-                    Vorschau
+                {/* Tabs */}
+                <div className="flex gap-1 mt-5 bg-white/[0.03] p-1 rounded-xl border border-white/[0.06] flex-wrap">
+                  {[
+                    { key: 'basic', icon: File, label: 'Basis', badge: !hasRequiredBasicFields() },
+                    { key: 'specs', icon: Settings, label: 'Specs' },
+                    { key: 'features', icon: List, label: 'Ausstattung' },
+                    { key: 'condition', icon: Activity, label: 'Zustand' },
+                  ].map(tab => (
+                    <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${activeTab === tab.key
+                        ? 'bg-[#14A79D] text-white shadow-lg shadow-[#14A79D]/20'
+                        : 'text-white/40 hover:text-white/70 hover:bg-white/[0.04]'}`}>
+                      <tab.icon className="w-4 h-4" />
+                      {tab.label}
+                      {tab.badge && <span className="w-1.5 h-1.5 bg-red-500 rounded-full" />}
+                    </button>
+                  ))}
+                  <button onClick={() => {
+                    if (!hasRequiredBasicFields()) { toast.error('Bitte füllen Sie erst alle Pflichtfelder aus'); setActiveTab('basic'); return; }
+                    setActiveTab('preview');
+                  }}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ml-auto ${activeTab === 'preview'
+                      ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20'
+                      : 'text-white/40 hover:text-white/70 hover:bg-white/[0.04]'}`}>
+                    <Eye className="w-4 h-4" /> Vorschau
                   </button>
                 </div>
               </div>
@@ -1332,7 +1138,7 @@ const Admin = () => {
                             type="text"
                             value={editingCar.brand || ''}
                             onChange={(e) => updateCarField('brand', e.target.value)}
-                            className={`w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 ${editingCar.brand ? 'border border-green-500/30 focus:ring-green-400' : 'border border-red-500/30 focus:ring-red-400'
+                            className={`w-full bg-white/[0.04] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 ${editingCar.brand ? 'border border-green-500/30 focus:ring-green-400' : 'border border-red-500/30 focus:ring-red-400'
                               }`}
                             placeholder="z.B. BMW, Mercedes, Audi"
                           />
@@ -1350,7 +1156,7 @@ const Admin = () => {
                             type="text"
                             value={editingCar.model || ''}
                             onChange={(e) => updateCarField('model', e.target.value)}
-                            className={`w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 ${editingCar.model ? 'border border-green-500/30 focus:ring-green-400' : 'border border-red-500/30 focus:ring-red-400'
+                            className={`w-full bg-white/[0.04] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 ${editingCar.model ? 'border border-green-500/30 focus:ring-green-400' : 'border border-red-500/30 focus:ring-red-400'
                               }`}
                             placeholder="z.B. 3er, A-Klasse, A4"
                           />
@@ -1368,7 +1174,7 @@ const Admin = () => {
                             type="number"
                             value={editingCar.year || ''}
                             onChange={(e) => updateCarField('year', parseInt(e.target.value))}
-                            className={`w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 ${editingCar.year ? 'border border-green-500/30 focus:ring-green-400' : 'border border-red-500/30 focus:ring-red-400'
+                            className={`w-full bg-white/[0.04] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 ${editingCar.year ? 'border border-green-500/30 focus:ring-green-400' : 'border border-red-500/30 focus:ring-red-400'
                               }`}
                             placeholder="z.B. 2020"
                             min="1900"
@@ -1389,7 +1195,7 @@ const Admin = () => {
                               type="number"
                               value={editingCar.price || ''}
                               onChange={(e) => updateCarField('price', parseInt(e.target.value))}
-                              className={`w-full bg-[#1a1c25] text-white px-4 py-2 pl-8 rounded-lg focus:outline-none focus:ring-2 ${editingCar.price > 0 ? 'border border-green-500/30 focus:ring-green-400' : 'border border-red-500/30 focus:ring-red-400'
+                              className={`w-full bg-white/[0.04] text-white px-4 py-2 pl-8 rounded-lg focus:outline-none focus:ring-2 ${editingCar.price > 0 ? 'border border-green-500/30 focus:ring-green-400' : 'border border-red-500/30 focus:ring-red-400'
                                 }`}
                               placeholder="z.B. 25000"
                               min="0"
@@ -1411,7 +1217,7 @@ const Admin = () => {
                               type="number"
                               value={editingCar.mileage || ''}
                               onChange={(e) => updateCarField('mileage', parseInt(e.target.value))}
-                              className={`w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 ${editingCar.mileage >= 0 ? 'border border-green-500/30 focus:ring-green-400' : 'border border-red-500/30 focus:ring-red-400'
+                              className={`w-full bg-white/[0.04] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 ${editingCar.mileage >= 0 ? 'border border-green-500/30 focus:ring-green-400' : 'border border-red-500/30 focus:ring-red-400'
                                 }`}
                               placeholder="z.B. 50000"
                               min="0"
@@ -1424,7 +1230,7 @@ const Admin = () => {
                           <select
                             value={editingCar.status || 'available'}
                             onChange={(e) => updateCarField('status', e.target.value)}
-                            className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 border border-gray-700"
+                            className="w-full bg-white/[0.04] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 border border-gray-700"
                           >
                             <option value="available">Verfügbar</option>
                             <option value="sold">Verkauft</option>
@@ -1437,7 +1243,7 @@ const Admin = () => {
                         <textarea
                           value={editingCar.description || ''}
                           onChange={(e) => updateCarField('description', e.target.value)}
-                          className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 h-32 resize-none border border-gray-700"
+                          className="w-full bg-white/[0.04] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 h-32 resize-none border border-gray-700"
                           placeholder="Ausführliche Beschreibung des Fahrzeugs..."
                         />
                       </div>
@@ -1455,7 +1261,7 @@ const Admin = () => {
                         {/* Vorschau der bereits hochgeladenen Bilder */}
                         {editingCar.images && editingCar.images.length > 0 && (
                           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 mb-4">
-                            {editingCar.images.map((imageUrl, index) => (
+                            {editingCar.images.map((imageUrl: string, index: number) => (
                               <div key={index} className="relative group aspect-square overflow-hidden rounded-lg">
                                 <img
                                   src={imageUrl}
@@ -1464,7 +1270,7 @@ const Admin = () => {
                                 />
                                 <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                   <button
-                                    onClick={() => updateCarField('images', editingCar.images.filter((_, i) => i !== index))}
+                                    onClick={() => updateCarField('images', editingCar.images.filter((_: string, i: number) => i !== index))}
                                     className="bg-red-500 text-white p-1 rounded-full"
                                   >
                                     <Trash2 className="w-4 h-4" />
@@ -1495,7 +1301,7 @@ const Admin = () => {
                           type="text"
                           value={editingCar.specs?.engine || ''}
                           onChange={(e) => updateSpecsField('engine', e.target.value)}
-                          className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+                          className="w-full bg-white/[0.04] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
                         />
                       </div>
                       <div>
@@ -1504,7 +1310,7 @@ const Admin = () => {
                           type="text"
                           value={editingCar.specs?.power || ''}
                           onChange={(e) => updateSpecsField('power', e.target.value)}
-                          className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+                          className="w-full bg-white/[0.04] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
                         />
                       </div>
                       <div>
@@ -1513,7 +1319,7 @@ const Admin = () => {
                           type="text"
                           value={editingCar.specs?.transmission || ''}
                           onChange={(e) => updateSpecsField('transmission', e.target.value)}
-                          className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+                          className="w-full bg-white/[0.04] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
                         />
                       </div>
                       <div>
@@ -1522,7 +1328,7 @@ const Admin = () => {
                           type="text"
                           value={editingCar.specs?.fuelType || ''}
                           onChange={(e) => updateSpecsField('fuelType', e.target.value)}
-                          className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+                          className="w-full bg-white/[0.04] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
                         />
                       </div>
                       <div>
@@ -1531,7 +1337,7 @@ const Admin = () => {
                           type="text"
                           value={editingCar.specs?.acceleration || ''}
                           onChange={(e) => updateSpecsField('acceleration', e.target.value)}
-                          className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+                          className="w-full bg-white/[0.04] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
                         />
                       </div>
                       <div>
@@ -1540,7 +1346,7 @@ const Admin = () => {
                           type="text"
                           value={editingCar.specs?.topSpeed || ''}
                           onChange={(e) => updateSpecsField('topSpeed', e.target.value)}
-                          className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+                          className="w-full bg-white/[0.04] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
                         />
                       </div>
                       <div>
@@ -1549,7 +1355,7 @@ const Admin = () => {
                           type="text"
                           value={editingCar.specs?.consumption || ''}
                           onChange={(e) => updateSpecsField('consumption', e.target.value)}
-                          className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+                          className="w-full bg-white/[0.04] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
                         />
                       </div>
                       <div>
@@ -1558,7 +1364,7 @@ const Admin = () => {
                           type="text"
                           value={editingCar.specs?.emissions || ''}
                           onChange={(e) => updateSpecsField('emissions', e.target.value)}
-                          className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+                          className="w-full bg-white/[0.04] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
                         />
                       </div>
                       <div>
@@ -1567,7 +1373,7 @@ const Admin = () => {
                           type="text"
                           value={editingCar.specs?.hubraum || ''}
                           onChange={(e) => updateSpecsField('hubraum', e.target.value)}
-                          className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+                          className="w-full bg-white/[0.04] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
                         />
                       </div>
                       <div>
@@ -1576,7 +1382,7 @@ const Admin = () => {
                           type="text"
                           value={editingCar.specs?.seats || ''}
                           onChange={(e) => updateSpecsField('seats', e.target.value)}
-                          className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+                          className="w-full bg-white/[0.04] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
                         />
                       </div>
                       <div>
@@ -1585,7 +1391,7 @@ const Admin = () => {
                           type="text"
                           value={editingCar.specs?.doors || ''}
                           onChange={(e) => updateSpecsField('doors', e.target.value)}
-                          className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+                          className="w-full bg-white/[0.04] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
                         />
                       </div>
                       <div>
@@ -1594,7 +1400,7 @@ const Admin = () => {
                           type="text"
                           value={editingCar.specs?.emissionClass || ''}
                           onChange={(e) => updateSpecsField('emissionClass', e.target.value)}
-                          className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+                          className="w-full bg-white/[0.04] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
                         />
                       </div>
                       <div>
@@ -1603,7 +1409,7 @@ const Admin = () => {
                           type="text"
                           value={editingCar.specs?.environmentBadge || ''}
                           onChange={(e) => updateSpecsField('environmentBadge', e.target.value)}
-                          className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+                          className="w-full bg-white/[0.04] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
                         />
                       </div>
                       <div>
@@ -1612,7 +1418,7 @@ const Admin = () => {
                           type="text"
                           value={editingCar.specs?.inspection || ''}
                           onChange={(e) => updateSpecsField('inspection', e.target.value)}
-                          className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+                          className="w-full bg-white/[0.04] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
                         />
                       </div>
                       <div>
@@ -1621,7 +1427,7 @@ const Admin = () => {
                           type="text"
                           value={editingCar.specs?.airConditioning || ''}
                           onChange={(e) => updateSpecsField('airConditioning', e.target.value)}
-                          className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+                          className="w-full bg-white/[0.04] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
                         />
                       </div>
                       <div>
@@ -1630,7 +1436,7 @@ const Admin = () => {
                           type="text"
                           value={editingCar.specs?.parkingAssist || ''}
                           onChange={(e) => updateSpecsField('parkingAssist', e.target.value)}
-                          className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+                          className="w-full bg-white/[0.04] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
                         />
                       </div>
                       <div>
@@ -1639,7 +1445,7 @@ const Admin = () => {
                           type="text"
                           value={editingCar.specs?.airbags || ''}
                           onChange={(e) => updateSpecsField('airbags', e.target.value)}
-                          className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+                          className="w-full bg-white/[0.04] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
                         />
                       </div>
                       <div>
@@ -1648,7 +1454,7 @@ const Admin = () => {
                           type="text"
                           value={editingCar.specs?.color || ''}
                           onChange={(e) => updateSpecsField('color', e.target.value)}
-                          className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+                          className="w-full bg-white/[0.04] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
                         />
                       </div>
                       <div>
@@ -1657,7 +1463,7 @@ const Admin = () => {
                           type="text"
                           value={editingCar.specs?.interiorColor || ''}
                           onChange={(e) => updateSpecsField('interiorColor', e.target.value)}
-                          className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+                          className="w-full bg-white/[0.04] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
                         />
                       </div>
                       <div>
@@ -1666,7 +1472,7 @@ const Admin = () => {
                           type="text"
                           value={editingCar.specs?.trailerLoad || ''}
                           onChange={(e) => updateSpecsField('trailerLoad', e.target.value)}
-                          className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+                          className="w-full bg-white/[0.04] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
                         />
                       </div>
                       <div>
@@ -1675,7 +1481,7 @@ const Admin = () => {
                           type="text"
                           value={editingCar.specs?.cylinders || ''}
                           onChange={(e) => updateSpecsField('cylinders', e.target.value)}
-                          className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+                          className="w-full bg-white/[0.04] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
                         />
                       </div>
                       <div>
@@ -1684,7 +1490,7 @@ const Admin = () => {
                           type="text"
                           value={editingCar.specs?.tankVolume || ''}
                           onChange={(e) => updateSpecsField('tankVolume', e.target.value)}
-                          className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+                          className="w-full bg-white/[0.04] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
                         />
                       </div>
                     </div>
@@ -1713,7 +1519,7 @@ const Admin = () => {
                           value={editingCar.features?.join('\n') || ''}
                           onChange={(e) => updateCarField('features', e.target.value.split('\n').filter(Boolean))}
                           placeholder="Geben Sie Ausstattungsmerkmale ein - eines pro Zeile. Für Kategorien verwenden Sie #Kategoriename:"
-                          className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 h-64 resize-none"
+                          className="w-full bg-white/[0.04] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 h-64 resize-none"
                         />
                       </div>
 
@@ -1723,7 +1529,7 @@ const Admin = () => {
                           value={editingCar.additionalFeatures?.join('\n') || ''}
                           onChange={(e) => updateCarField('additionalFeatures', e.target.value.split('\n').filter(Boolean))}
                           placeholder="Eine Zusatzausstattung pro Zeile"
-                          className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 h-48 resize-none"
+                          className="w-full bg-white/[0.04] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 h-48 resize-none"
                         />
                       </div>
                     </div>
@@ -1736,7 +1542,7 @@ const Admin = () => {
                         <select
                           value={editingCar.condition?.type || 'Gebraucht'}
                           onChange={(e) => updateConditionField('type', e.target.value)}
-                          className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+                          className="w-full bg-white/[0.04] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
                         >
                           <option value="Neu">Neu</option>
                           <option value="Gebraucht">Gebraucht</option>
@@ -1750,7 +1556,7 @@ const Admin = () => {
                           type="number"
                           value={editingCar.condition?.previousOwners || 0}
                           onChange={(e) => updateConditionField('previousOwners', parseInt(e.target.value))}
-                          className="w-full bg-[#1a1c25] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+                          className="w-full bg-white/[0.04] text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
                         />
                       </div>
 
@@ -1802,7 +1608,7 @@ const Admin = () => {
                       )}
 
                       <motion.div
-                        initial={{ opacity: 0, y: this }}
+                        initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12"
                       >
@@ -2084,7 +1890,7 @@ const Admin = () => {
           </motion.div>
         )}
       </AnimatePresence>
-    </div >
+    </div>
   );
 };
 
