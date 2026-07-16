@@ -120,12 +120,8 @@ select option {
 /* ===== KEYFRAMES ===== */
 
 @keyframes shimmer {
-  0% {
-    background-position: 200% 0;
-  }
-
   100% {
-    background-position: -200% 0;
+    transform: translateX(100%);
   }
 }
 
@@ -237,17 +233,41 @@ select option {
 
 /* ===== COMPONENT STYLES ===== */
 
-/* Luxury card — subtle, no glow blobs */
+/* Luxury card — subtle glow and premium hover */
 .card-luxury {
   background: var(--color-surface);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.03);
   border-radius: 16px;
   overflow: hidden;
-  transition: border-color 0.4s var(--ease-premium), transform 0.4s var(--ease-premium);
+  transition: all 0.5s var(--ease-premium);
+  position: relative;
+  z-index: 1;
+}
+
+.card-luxury::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent 50%, rgba(20,167,157,0.1));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.5s var(--ease-premium);
+  z-index: 2;
 }
 
 .card-luxury:hover {
-  border-color: rgba(255, 255, 255, 0.08);
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 20px rgba(20, 167, 157, 0.1);
+  border-color: transparent;
+}
+
+.card-luxury:hover::before {
+  opacity: 1;
 }
 
 /* Button — primary (teal fill) */
@@ -315,10 +335,24 @@ select option {
 
 /* ===== SKELETON LOADING ===== */
 .skeleton {
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0.05) 50%, rgba(255, 255, 255, 0.02) 100%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
+  position: relative;
+  overflow: hidden;
+  background-color: var(--color-surface-elevated);
   border-radius: 12px;
+}
+
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.04),
+    transparent
+  );
+  animation: shimmer 1.5s infinite;
 }
 
 /* ===== MARQUEE ===== */

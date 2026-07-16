@@ -460,39 +460,24 @@ const Home = () => {
       {/* ─── CTA BANNER ─── */}
       <Section className="py-20 md:py-28">
         <div className="max-w-[1400px] mx-auto px-6 md:px-16 lg:px-24">
-          <motion.div
-            whileHover={{ scale: 1.005 }}
-            transition={{ duration: 0.5 }}
-            className="relative rounded-3xl overflow-hidden py-16 md:py-20 px-8 md:px-16 text-center"
-            style={{ background: 'linear-gradient(135deg, rgba(20,167,157,0.08) 0%, rgba(235,165,48,0.06) 100%)' }}
-          >
-            <div className="absolute inset-0 border border-white/[0.04] rounded-3xl pointer-events-none" />
-            {/* Animated floating orb */}
-            <motion.div
-              className="absolute -top-20 -right-20 w-60 h-60 bg-[#14A79D]/5 rounded-full blur-3xl"
-              animate={{ x: [0, 20, 0], y: [0, -15, 0] }}
-              transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-            />
-            <motion.div
-              className="absolute -bottom-20 -left-20 w-40 h-40 bg-[#EBA530]/5 rounded-full blur-3xl"
-              animate={{ x: [0, -15, 0], y: [0, 10, 0] }}
-              transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
-            />
-            <h2 className="relative text-3xl md:text-4xl font-display font-bold text-white tracking-tight mb-4">
-              Ihr Traumfahrzeug wartet
-            </h2>
-            <p className="relative text-white/40 text-base mb-8 max-w-md mx-auto">
-              Besuchen Sie unseren Showroom und finden Sie Ihr nächstes Premium-Fahrzeug.
-            </p>
-            <div className="relative flex flex-wrap justify-center gap-4">
-              <Link to="/showroom" className="btn-primary">
-                Showroom besuchen <ArrowRight className="w-4 h-4" />
+          <div className="bg-[#0a0a0a] border border-white/5 rounded-3xl p-8 md:p-12 lg:p-16 flex flex-col md:flex-row items-center justify-between gap-10">
+            <div className="max-w-2xl text-center md:text-left">
+              <h2 className="text-3xl md:text-4xl font-display font-bold text-white tracking-tight mb-4">
+                Finden Sie jetzt Ihr nächstes Fahrzeug.
+              </h2>
+              <p className="text-white/40 text-base md:text-lg">
+                Wir haben ständig top gepflegte Premium-Gebrauchtwagen auf Lager. Alle Fahrzeuge sind sofort verfügbar und bereit für eine Probefahrt.
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto shrink-0">
+              <Link to="/showroom" className="btn-primary w-full sm:w-auto">
+                Zum Showroom
               </Link>
-              <Link to="/contact" className="btn-outline">
-                Beratung anfragen
+              <Link to="/contact" className="btn-outline w-full sm:w-auto">
+                Kontakt
               </Link>
             </div>
-          </motion.div>
+          </div>
         </div>
       </Section>
     </div>

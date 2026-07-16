@@ -26,7 +26,7 @@ const Showroom = () => {
   const [favorites, setFavorites] = useState<string[]>(() => {
     try { return JSON.parse(localStorage.getItem('favorites') || '[]'); } catch { return []; }
   });
-  const [filters, setFilters] = useState({ brand: '', fuel: '', transmission: '', minPrice: '', maxPrice: '', minYear: '', maxYear: '' });
+  const [filters, setFilters] = useState({ brand: '', fuel: '', transmission: '', minPrice: '', maxPrice: '', minYear: '', maxYear: '', minMileage: '', maxMileage: '', minPower: '' });
 
   useEffect(() => {
     (async () => {
@@ -59,6 +59,13 @@ const Showroom = () => {
       if (filters.maxPrice && c.price > Number(filters.maxPrice)) return false;
       if (filters.minYear && c.year < Number(filters.minYear)) return false;
       if (filters.maxYear && c.year > Number(filters.maxYear)) return false;
+      if (filters.minMileage && c.mileage < Number(filters.minMileage)) return false;
+      if (filters.maxMileage && c.mileage > Number(filters.maxMileage)) return false;
+      if (filters.minPower) {
+        if (!c.specs?.power) return false;
+        const pMatch = c.specs.power.toString().match(/(\d+)/);
+        if (pMatch && parseInt(pMatch[1], 10) < Number(filters.minPower)) return false;
+      }
       return true;
     })
     .sort((a, b) => {
@@ -69,21 +76,21 @@ const Showroom = () => {
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
 
-  const clearFilters = () => { setFilters({ brand: '', fuel: '', transmission: '', minPrice: '', maxPrice: '', minYear: '', maxYear: '' }); setSearch(''); };
-  const hasFilters = search || filters.brand || filters.fuel || filters.transmission || filters.minPrice || filters.maxPrice || filters.minYear || filters.maxYear;
-  const activeFilterCount = [filters.brand, filters.fuel, filters.transmission, filters.minPrice, filters.maxPrice, filters.minYear, filters.maxYear].filter(Boolean).length;
+  const clearFilters = () => { setFilters({ brand: '', fuel: '', transmission: '', minPrice: '', maxPrice: '', minYear: '', maxYear: '', minMileage: '', maxMileage: '', minPower: '' }); setSearch(''); };
+  const hasFilters = search || filters.brand || filters.fuel || filters.transmission || filters.minPrice || filters.maxPrice || filters.minYear || filters.maxYear || filters.minMileage || filters.maxMileage || filters.minPower;
+  const activeFilterCount = [filters.brand, filters.fuel, filters.transmission, filters.minPrice, filters.maxPrice, filters.minYear, filters.maxYear, filters.minMileage, filters.maxMileage, filters.minPower].filter(Boolean).length;
 
   return (
-    <div className="min-h-screen bg-[#050505] pt-24 pb-20">
+    <div className="min-h-screen bg-[#050505] pt-32 pb-32">
       <div className="max-w-[1400px] mx-auto px-6 md:px-16 lg:px-24">
-        {/* Header */}
-        <Section className="pt-8 pb-10">
-          <p className="text-[#14A79D] text-xs font-medium tracking-[0.2em] uppercase mb-3">Showroom</p>
-          <h1 className="text-3xl md:text-5xl font-display font-bold text-white tracking-tight mb-3">
-            Unsere Fahrzeuge
+        {/* Header section */}
+        <Section className="mb-16">
+          <p className="text-[#14A79D] text-xs font-medium tracking-[0.25em] uppercase mb-4">Bestand</p>
+          <h1 className="text-4xl md:text-6xl font-display font-bold text-white tracking-tight mb-5">
+            Showroom
           </h1>
-          <p className="text-white/35 text-base max-w-lg">
-            Entdecken Sie unsere handverlesene Auswahl an Premium-Gebrauchtwagen.
+          <p className="text-white/35 text-base max-w-xl leading-relaxed">
+            Entdecken Sie unsere handverlesene Auswahl an exklusiven Premium-Fahrzeugen.
           </p>
         </Section>
 
@@ -170,48 +177,95 @@ const Showroom = () => {
             </div>
           </div>
 
-          {/* Filter panel */}
+          {/* Desktop Filter Panel */}
           <AnimatePresence>
             {showFilters && (
-              <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3 }} className="overflow-hidden">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4">
-                  <select value={filters.brand} onChange={e => setFilters({ ...filters, brand: e.target.value })}
-                    className="px-4 py-3 rounded-xl bg-white/[0.03] border border-white/[0.06] text-white text-sm focus:outline-none">
-                    <option value="">Alle Marken</option>
-                    {brands.map(b => <option key={b} value={b}>{b}</option>)}
-                  </select>
-                  <select value={filters.fuel} onChange={e => setFilters({ ...filters, fuel: e.target.value })}
-                    className="px-4 py-3 rounded-xl bg-white/[0.03] border border-white/[0.06] text-white text-sm focus:outline-none">
-                    <option value="">Alle Kraftstoffe</option>
-                    {fuels.map(f => <option key={f} value={f}>{f}</option>)}
-                  </select>
-                  <select value={filters.transmission} onChange={e => setFilters({ ...filters, transmission: e.target.value })}
-                    className="px-4 py-3 rounded-xl bg-white/[0.03] border border-white/[0.06] text-white text-sm focus:outline-none">
-                    <option value="">Alle Getriebe</option>
-                    {transmissions.map(t => <option key={t} value={t}>{t}</option>)}
-                  </select>
-                  <div className="flex gap-2">
-                    <input type="number" placeholder="Min. Preis" value={filters.minPrice} onChange={e => setFilters({ ...filters, minPrice: e.target.value })}
-                      className="w-1/2 px-3 py-3 rounded-xl bg-white/[0.03] border border-white/[0.06] text-white text-sm placeholder:text-white/25 focus:outline-none" />
-                    <input type="number" placeholder="Max. Preis" value={filters.maxPrice} onChange={e => setFilters({ ...filters, maxPrice: e.target.value })}
-                      className="w-1/2 px-3 py-3 rounded-xl bg-white/[0.03] border border-white/[0.06] text-white text-sm placeholder:text-white/25 focus:outline-none" />
+              <>
+                {/* Mobile Bottom Sheet Overlay */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="md:hidden fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm"
+                  onClick={() => setShowFilters(false)}
+                />
+                
+                {/* Filter Container (Bottom Sheet on mobile, Inline on desktop) */}
+                <motion.div
+                  initial={{ y: 300, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1, height: 'auto' }}
+                  exit={{ y: 300, opacity: 0 }}
+                  transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                  className="fixed md:static bottom-0 left-0 right-0 z-[61] md:z-auto bg-[#0a0a0a] md:bg-transparent border-t border-white/10 md:border-none p-6 md:p-0 rounded-t-3xl md:rounded-none overflow-hidden max-h-[85vh] md:max-h-none overflow-y-auto"
+                >
+                  <div className="flex items-center justify-between md:hidden mb-6">
+                    <h3 className="text-white font-display font-bold text-xl">Filter</h3>
+                    <button onClick={() => setShowFilters(false)} className="p-2 bg-white/5 rounded-full text-white/50 hover:text-white">
+                      <X className="w-5 h-5" />
+                    </button>
                   </div>
-                </div>
-                {/* Second row */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-3">
-                  <div className="flex gap-2 col-span-2">
-                    <input type="number" placeholder="Baujahr ab" value={filters.minYear} onChange={e => setFilters({ ...filters, minYear: e.target.value })}
-                      className="w-1/2 px-3 py-3 rounded-xl bg-white/[0.03] border border-white/[0.06] text-white text-sm placeholder:text-white/25 focus:outline-none" />
-                    <input type="number" placeholder="Baujahr bis" value={filters.maxYear} onChange={e => setFilters({ ...filters, maxYear: e.target.value })}
-                      className="w-1/2 px-3 py-3 rounded-xl bg-white/[0.03] border border-white/[0.06] text-white text-sm placeholder:text-white/25 focus:outline-none" />
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:pt-4">
+                    <select value={filters.brand} onChange={e => setFilters({ ...filters, brand: e.target.value })}
+                      className="col-span-2 md:col-span-1 px-4 py-3.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none">
+                      <option value="">Alle Marken</option>
+                      {brands.map(b => <option key={b} value={b}>{b}</option>)}
+                    </select>
+                    <select value={filters.fuel} onChange={e => setFilters({ ...filters, fuel: e.target.value })}
+                      className="col-span-1 px-4 py-3.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none">
+                      <option value="">Alle Kraftstoffe</option>
+                      {fuels.map(f => <option key={f} value={f}>{f}</option>)}
+                    </select>
+                    <select value={filters.transmission} onChange={e => setFilters({ ...filters, transmission: e.target.value })}
+                      className="col-span-1 px-4 py-3.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none">
+                      <option value="">Alle Getriebe</option>
+                      {transmissions.map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
                   </div>
-                </div>
-                {hasFilters && (
-                  <button onClick={clearFilters} className="flex items-center gap-1.5 mt-3 text-xs text-white/40 hover:text-white transition-colors">
-                    <X className="w-3 h-3" /> Filter zurücksetzen
-                  </button>
-                )}
-              </motion.div>
+
+                  {/* Second row */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4">
+                    <div className="flex gap-2 col-span-2">
+                      <input type="number" placeholder="Min. Preis €" inputMode="numeric" value={filters.minPrice} onChange={e => setFilters({ ...filters, minPrice: e.target.value })}
+                        className="w-1/2 px-3 py-3.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm placeholder:text-white/30 focus:outline-none" />
+                      <input type="number" placeholder="Max. Preis €" inputMode="numeric" value={filters.maxPrice} onChange={e => setFilters({ ...filters, maxPrice: e.target.value })}
+                        className="w-1/2 px-3 py-3.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm placeholder:text-white/30 focus:outline-none" />
+                    </div>
+                    <div className="flex gap-2 col-span-2">
+                      <input type="number" placeholder="Min. KM" inputMode="numeric" value={filters.minMileage} onChange={e => setFilters({ ...filters, minMileage: e.target.value })}
+                        className="w-1/2 px-3 py-3.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm placeholder:text-white/30 focus:outline-none" />
+                      <input type="number" placeholder="Max. KM" inputMode="numeric" value={filters.maxMileage} onChange={e => setFilters({ ...filters, maxMileage: e.target.value })}
+                        className="w-1/2 px-3 py-3.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm placeholder:text-white/30 focus:outline-none" />
+                    </div>
+                  </div>
+
+                  {/* Third row */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4">
+                    <div className="flex gap-2 col-span-2">
+                      <input type="number" placeholder="Baujahr ab" inputMode="numeric" value={filters.minYear} onChange={e => setFilters({ ...filters, minYear: e.target.value })}
+                        className="w-1/2 px-3 py-3.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm placeholder:text-white/30 focus:outline-none" />
+                      <input type="number" placeholder="Baujahr bis" inputMode="numeric" value={filters.maxYear} onChange={e => setFilters({ ...filters, maxYear: e.target.value })}
+                        className="w-1/2 px-3 py-3.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm placeholder:text-white/30 focus:outline-none" />
+                    </div>
+                    <div className="col-span-2 md:col-span-1">
+                      <input type="number" placeholder="Min. Leistung (PS/kW)" inputMode="numeric" value={filters.minPower} onChange={e => setFilters({ ...filters, minPower: e.target.value })}
+                        className="w-full px-4 py-3.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm placeholder:text-white/30 focus:outline-none" />
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex flex-col md:flex-row items-center gap-4 mt-8 md:mt-4">
+                    <button onClick={() => setShowFilters(false)} className="md:hidden w-full py-4 rounded-xl bg-[#14A79D] text-white font-medium">
+                      Ergebnisse anzeigen ({filtered.length})
+                    </button>
+                    {hasFilters && (
+                      <button onClick={clearFilters} className="flex items-center justify-center gap-1.5 w-full md:w-auto text-sm text-white/40 hover:text-white transition-colors py-2">
+                        <X className="w-4 h-4" /> Filter zurücksetzen
+                      </button>
+                    )}
+                  </div>
+                </motion.div>
+              </>
             )}
           </AnimatePresence>
         </Section>

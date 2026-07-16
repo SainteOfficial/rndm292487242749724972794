@@ -6,7 +6,7 @@ import { useLocation } from 'react-router-dom';
 const WhatsAppButton = () => {
   const [isHovered, setIsHovered] = useState(false);
   const location = useLocation();
-  const phoneNumber = '4923069988585';
+  const phoneNumber = '4915153366666';
   const message = encodeURIComponent('Hallo! Ich interessiere mich für ein Fahrzeug bei Autosmaya.');
   const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;
 

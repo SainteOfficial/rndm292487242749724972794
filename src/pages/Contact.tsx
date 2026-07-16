@@ -30,7 +30,8 @@ const Contact = () => {
   };
 
   const contactInfo = [
-    { icon: Phone, label: 'Telefon', value: '+49 2306 9988585', href: 'tel:+4923069988585' },
+    { icon: Phone, label: 'Mobil (Bevorzugt)', value: '+49 1515 3366666', href: 'tel:+4915153366666' },
+    { icon: Phone, label: 'Festnetz', value: '+49 2306 9988585', href: 'tel:+4923069988585' },
     { icon: Mail, label: 'E-Mail', value: 'kfzhandelsmaya@autosmaya.de', href: 'mailto:kfzhandelsmaya@autosmaya.de' },
     { icon: MapPin, label: 'Adresse', value: 'Aplerbecker Straße 351, 44287 Dortmund', href: 'https://maps.google.com/?q=Aplerbecker+Straße+351+44287+Dortmund' },
     { icon: Clock, label: 'Öffnungszeiten', value: 'Mo–Fr 9–19 Uhr | Sa 10–18 Uhr' },

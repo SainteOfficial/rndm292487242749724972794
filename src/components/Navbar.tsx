@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Phone } from 'lucide-react';
+import { Menu, X, Phone, Home, CarFront, Image as ImageIcon, MessageCircle } from 'lucide-react';
 
 const navLinks = [
   { name: 'Startseite', path: '/' },
@@ -38,9 +38,9 @@ const Navbar = () => {
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         className="fixed top-0 left-0 right-0 z-50 transition-all duration-500"
         style={{
-          background: scrolled ? 'rgba(5, 5, 5, 0.85)' : 'transparent',
-          backdropFilter: scrolled ? 'blur(40px) saturate(180%)' : 'none',
-          borderBottom: scrolled ? '1px solid rgba(255,255,255,0.04)' : '1px solid transparent',
+          background: scrolled ? 'rgba(5, 5, 5, 0.65)' : 'transparent',
+          backdropFilter: scrolled ? 'blur(60px) saturate(200%)' : 'none',
+          borderBottom: scrolled ? '1px solid rgba(255,255,255,0.06)' : '1px solid transparent',
         }}
       >
         <div className="max-w-[1400px] mx-auto px-6 md:px-16 lg:px-24">
@@ -79,11 +79,11 @@ const Navbar = () => {
             {/* Desktop CTA */}
             <div className="hidden lg:flex items-center gap-4">
               <a
-                href="tel:+4923069988585"
+                href="tel:+4915153366666"
                 className="flex items-center gap-2 text-sm text-white/50 hover:text-white transition-colors duration-300"
               >
                 <Phone className="w-3.5 h-3.5" />
-                <span>+49 2306 9988585</span>
+                <span>+49 1515 3366666</span>
               </a>
               <Link
                 to="/showroom"
@@ -144,11 +144,11 @@ const Navbar = () => {
               className="mt-12 space-y-4"
             >
               <a
-                href="tel:+4923069988585"
+                href="tel:+4915153366666"
                 className="flex items-center gap-3 text-white/50 text-sm"
               >
                 <Phone className="w-4 h-4" />
-                +49 2306 9988585
+                +49 1515 3366666
               </a>
               <Link to="/showroom" className="btn-primary w-full text-center">
                 Showroom besuchen
@@ -157,6 +157,42 @@ const Navbar = () => {
           </motion.div>
         )}
       </AnimatePresence>
+      {/* Mobile Bottom Tab Bar */}
+      {!location.pathname.startsWith('/car/') && (
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#050505]/60 backdrop-blur-3xl border-t border-white/10 pb-safe">
+          <div className="flex items-center justify-around px-2 py-3">
+            {[
+              { name: 'Home', path: '/', icon: Home },
+              { name: 'Showroom', path: '/showroom', icon: CarFront },
+              { name: 'Galerie', path: '/gallery', icon: ImageIcon },
+              { name: 'Kontakt', path: '/contact', icon: MessageCircle },
+            ].map((tab) => {
+              const isActive = location.pathname === tab.path;
+              return (
+                <Link
+                  key={tab.name}
+                  to={tab.path}
+                  className="flex flex-col items-center gap-1 p-2"
+                >
+                  <tab.icon
+                    className={`w-5 h-5 transition-colors duration-300 ${
+                      isActive ? 'text-[#14A79D]' : 'text-white/40'
+                    }`}
+                    strokeWidth={isActive ? 2.5 : 1.5}
+                  />
+                  <span
+                    className={`text-[10px] font-medium transition-colors duration-300 ${
+                      isActive ? 'text-[#14A79D]' : 'text-white/40'
+                    }`}
+                  >
+                    {tab.name}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </>
   );
 };

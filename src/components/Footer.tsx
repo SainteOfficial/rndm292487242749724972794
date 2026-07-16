@@ -56,9 +56,13 @@ const Footer = () => (
               <span>Aplerbecker Straße 351<br />44287 Dortmund</span>
             </li>
             <li>
-              <a href="tel:+4923069988585" className="flex items-center gap-3 hover:text-white transition-colors duration-300">
+              <a href="tel:+4915153366666" className="flex items-center gap-3 hover:text-white transition-colors duration-300 mb-2">
                 <Phone className="w-4 h-4 flex-shrink-0 text-white/25" />
-                +49 2306 9988585
+                +49 1515 3366666 (Mobil)
+              </a>
+              <a href="tel:+4923069988585" className="flex items-center gap-3 text-white/50 hover:text-white transition-colors duration-300">
+                <Phone className="w-4 h-4 flex-shrink-0 text-white/10" />
+                +49 2306 9988585 (Festnetz)
               </a>
             </li>
             <li>

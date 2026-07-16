@@ -94,7 +94,7 @@ function App() {
         <div className="relative min-h-screen bg-[#050505]">
           <Navbar />
           <ScrollToTop />
-          <main className="relative z-10">
+          <main className="relative z-10 pb-20 lg:pb-0">
             <AnimatedRoutes />
           </main>
           <Footer />

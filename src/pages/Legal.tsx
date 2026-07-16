@@ -24,7 +24,8 @@ Inhaber: Salaheddine Khammale
 Aplerbecker Straße 351
 44287 Dortmund
 
-Telefon: +49 2306 9988585
+Telefon: +49 1515 3366666 (Mobil)
+Telefon: +49 2306 9988585 (Festnetz)
 E-Mail: kfzhandelsmaya@autosmaya.de
 
 USt-IdNr.: DE-Nr. wird nachgereicht

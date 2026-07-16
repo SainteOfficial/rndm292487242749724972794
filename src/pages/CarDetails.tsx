@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronLeft, ChevronRight, Heart, Share2, Phone, Mail, MapPin,
   Calendar, Gauge, Fuel, Settings, Palette, Car, Shield,
-  X, ExternalLink, ChevronDown, ChevronUp, CheckCircle2
+  X, ExternalLink, ChevronDown, ChevronUp, CheckCircle2, Printer
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
@@ -241,6 +241,9 @@ const CarDetails = () => {
                   </p>
                 </div>
                 <div className="flex gap-2">
+                  <button onClick={() => window.print()} className="p-3 rounded-full border border-white/[0.08] text-white/50 hover:text-white hover:bg-white/5 transition-all duration-300 hidden md:flex" title="Exposé drucken">
+                    <Printer className="w-5 h-5" />
+                  </button>
                   <button onClick={toggleFavorite} className={`p-3 rounded-full border transition-all duration-300 ${isFavorite ? 'border-red-500/30 text-red-500 bg-red-500/10' : 'border-white/[0.08] text-white/50 hover:text-white hover:bg-white/5'}`}>
                     <Heart className={`w-5 h-5 ${isFavorite ? 'fill-red-500' : ''}`} />
                   </button>
@@ -257,16 +260,17 @@ const CarDetails = () => {
                   <p className="text-white/30 text-xs mt-1">inkl. MwSt. • Finanzierung möglich</p>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <a href={`https://wa.me/4923069988585?text=${encodeURIComponent(`Ich interessiere mich für den ${car.brand} ${car.model} (${car.year})`)}`}
+                  <a href={`https://wa.me/4915153366666?text=${encodeURIComponent(`Ich interessiere mich für den ${car.brand} ${car.model} (${car.year})`)}`}
                     target="_blank" rel="noopener noreferrer" className="btn-primary flex-1 justify-center py-3 text-sm shadow-[0_0_15px_rgba(20,167,157,0.3)]">
                     <Phone className="w-4 h-4 mr-1.5" /> WhatsApp
                   </a>
-                  <a href="tel:+4923069988585" className="btn-outline flex-1 justify-center py-3 text-sm border-white/10 hover:border-white/20 bg-white/5">
+                  <a href="tel:+4915153366666" className="btn-outline flex-1 justify-center py-3 text-sm border-white/10 hover:border-white/20 bg-white/5">
                     <Phone className="w-4 h-4 mr-1.5" /> Anrufen
                   </a>
                 </div>
-              </div>
             </div>
+
+          </div>
 
             {/* Quick Badges */}
             <div className="flex flex-wrap gap-2">
@@ -364,11 +368,11 @@ const CarDetails = () => {
               <p className="text-white/30 text-xs mb-8">inkl. MwSt. • Finanzierung möglich</p>
 
               <div className="space-y-4">
-                <a href={`https://wa.me/4923069988585?text=${encodeURIComponent(`Ich interessiere mich für den ${car.brand} ${car.model} (${car.year})`)}`}
+                <a href={`https://wa.me/4915153366666?text=${encodeURIComponent(`Ich interessiere mich für den ${car.brand} ${car.model} (${car.year})`)}`}
                   target="_blank" rel="noopener noreferrer" className="btn-primary w-full justify-center py-4 text-[15px] shadow-[0_0_20px_rgba(20,167,157,0.3)]">
                   <Phone className="w-5 h-5 mr-1" /> WhatsApp Anfrage
                 </a>
-                <a href="tel:+4923069988585" className="btn-outline w-full justify-center py-4 text-[15px] border-white/10 hover:border-white/20 bg-white/5">
+                <a href="tel:+4915153366666" className="btn-outline w-full justify-center py-4 text-[15px] border-white/10 hover:border-white/20 bg-white/5">
                   <Phone className="w-5 h-5 mr-1" /> Anrufen
                 </a>
               </div>
@@ -434,10 +438,10 @@ const CarDetails = () => {
               <p className="text-white font-display font-bold text-xl leading-none">€{car.price?.toLocaleString()}</p>
             </div>
             <div className="flex gap-2">
-              <a href="tel:+4923069988585" className="p-3.5 rounded-xl bg-white/5 border border-white/10 text-white flex items-center justify-center">
+              <a href="tel:+4915153366666" className="p-3.5 rounded-xl bg-white/5 border border-white/10 text-white flex items-center justify-center">
                 <Phone className="w-5 h-5" />
               </a>
-              <a href={`https://wa.me/4923069988585?text=${encodeURIComponent(`Ich interessiere mich für den ${car.brand} ${car.model} (${car.year})`)}`}
+              <a href={`https://wa.me/4915153366666?text=${encodeURIComponent(`Ich interessiere mich für den ${car.brand} ${car.model} (${car.year})`)}`}
                 target="_blank" rel="noopener noreferrer" className="px-5 py-3.5 rounded-xl bg-[#14A79D] text-white font-medium text-sm flex items-center shadow-[0_0_15px_rgba(20,167,157,0.3)]">
                 WhatsApp
               </a>

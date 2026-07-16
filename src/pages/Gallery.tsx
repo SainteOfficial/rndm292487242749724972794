@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence, useInView } from 'framer-motion';
-import { X, ChevronLeft, ChevronRight, ZoomIn, Images } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, ZoomIn, Images, ArrowUpRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 
 const Section = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => {
@@ -146,11 +147,16 @@ const Gallery = () => {
                 initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.3 }} />
             </AnimatePresence>
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-center">
-              <p className="text-white/70 text-sm font-display">{filtered[lightbox.carIndex].brand} {filtered[lightbox.carIndex].model}</p>
+            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-center flex flex-col items-center">
+              <p className="text-white text-base font-display font-medium mb-4 drop-shadow-md">{filtered[lightbox.carIndex].brand} {filtered[lightbox.carIndex].model}</p>
+              
+              <Link to={`/car/${filtered[lightbox.carIndex].id}`} onClick={(e) => e.stopPropagation()} className="px-6 py-2.5 bg-[#14A79D] hover:bg-[#11968d] text-white text-sm font-medium rounded-full transition-colors flex items-center gap-2 shadow-lg shadow-[#14A79D]/20 mb-3">
+                Zum Fahrzeug <ArrowUpRight className="w-4 h-4" />
+              </Link>
+
               {filtered[lightbox.carIndex].images.length > 1 && (
-                <p className="text-white/40 text-xs mt-1.5 flex items-center justify-center gap-1.5">
-                  <Images className="w-3 h-3" /> {lightbox.imageIndex + 1} / {filtered[lightbox.carIndex].images.length}
+                <p className="text-white/60 text-xs flex items-center justify-center gap-1.5 drop-shadow-md">
+                  <Images className="w-3.5 h-3.5" /> {lightbox.imageIndex + 1} / {filtered[lightbox.carIndex].images.length}
                 </p>
               )}
             </div>
