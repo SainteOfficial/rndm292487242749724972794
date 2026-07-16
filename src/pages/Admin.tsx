@@ -68,7 +68,6 @@ const Admin = () => {
   const [inquiryFilter, setInquiryFilter] = useState<'all' | 'new' | 'read' | 'replied'>('all');
   const [mobileDeAds, setMobileDeAds] = useState<any[]>([]);
   const [loadingMobileDeAds, setLoadingMobileDeAds] = useState(false);
-  const [includeInactiveMobile, setIncludeInactiveMobile] = useState(true);
   const [importing, setImporting] = useState(false);
 
   const categories = [
@@ -375,7 +374,7 @@ const Admin = () => {
     const toastId = toast.loading('Lade Inserate von Mobile.de API...');
     try {
       const { data, error } = await supabase.functions.invoke('mobile-de-sync', {
-        body: { action: 'list', includeInactive: includeInactiveMobile }
+        body: { action: 'list' }
       });
       if (error) throw error;
       if (data && data.ads) {
@@ -1322,25 +1321,14 @@ const Admin = () => {
                             <Sparkles className="w-4 h-4 text-[#FF6600]" />
                             Mobile.de API Sync
                           </label>
-                          <div className="flex items-center gap-3">
-                            <label className="flex items-center gap-2 cursor-pointer">
-                              <input
-                                type="checkbox"
-                                checked={includeInactiveMobile}
-                                onChange={(e) => setIncludeInactiveMobile(e.target.checked)}
-                                className="w-4 h-4 rounded bg-white/5 border-white/10 text-[#FF6600] focus:ring-[#FF6600]"
-                              />
-                              <span className="text-white/50 text-xs">Inaktive einbeziehen</span>
-                            </label>
-                            <button
-                              onClick={fetchMobileDeAds}
-                              disabled={loadingMobileDeAds}
-                              className="bg-[#FF6600]/10 hover:bg-[#FF6600]/20 text-[#FF6600] px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 flex items-center gap-2"
-                            >
-                              <RefreshCw className={`w-4 h-4 ${loadingMobileDeAds ? 'animate-spin' : ''}`} />
-                              {loadingMobileDeAds ? 'Lade...' : 'Bestand abrufen'}
-                            </button>
-                          </div>
+                          <button
+                            onClick={fetchMobileDeAds}
+                            disabled={loadingMobileDeAds}
+                            className="bg-[#FF6600]/10 hover:bg-[#FF6600]/20 text-[#FF6600] px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 flex items-center gap-2"
+                          >
+                            <RefreshCw className={`w-4 h-4 ${loadingMobileDeAds ? 'animate-spin' : ''}`} />
+                            {loadingMobileDeAds ? 'Lade...' : 'Bestand abrufen'}
+                          </button>
                         </div>
                         
                         {mobileDeAds.length > 0 && (
