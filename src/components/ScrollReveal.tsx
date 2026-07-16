@@ -43,14 +43,12 @@ const ScrollReveal: React.FC<ScrollRevealProps> = ({
   const variants = {
     hidden: {
       opacity: 0,
-      filter: blur ? 'blur(8px)' : 'blur(0px)',
       ...getInitialPosition(),
     },
     visible: {
       opacity: 1,
       x: 0,
       y: 0,
-      filter: 'blur(0px)',
       transition: {
         duration,
         delay,

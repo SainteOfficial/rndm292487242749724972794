@@ -1,9 +1,14 @@
-﻿import { useState, useEffect, useRef } from 'react';
-import { motion, useInView, useScroll, useTransform } from 'framer-motion';
-import { ArrowRight, ArrowUpRight, Shield, Handshake, Award, Star, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { motion, useInView, useScroll, useTransform, AnimatePresence } from 'framer-motion';
+import {
+  ArrowRight, ArrowUpRight, Shield, Handshake, Award, Star, ChevronLeft, ChevronRight,
+  Sparkles, CreditCard, FileCheck, Wrench, CarFront, MapPin, Clock, Phone,
+  Search, CheckCircle, Quote
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import Hero from '../components/Hero';
+import MarqueeLogos from '../components/MarqueeLogos';
 
 /* ─── animated counter ─── */
 const Counter = ({ end, suffix = '' }: { end: number; suffix?: string }) => {
@@ -27,15 +32,15 @@ const Counter = ({ end, suffix = '' }: { end: number; suffix?: string }) => {
   return <span ref={ref}>{val}{suffix}</span>;
 };
 
-/* ─── section wrapper with better entrance ─── */
+/* ─── section wrapper with entrance animation ─── */
 const Section = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: '-80px' });
   return (
     <motion.section
       ref={ref}
-      initial={{ opacity: 0, y: 40, filter: 'blur(8px)' }}
-      animate={inView ? { opacity: 1, y: 0, filter: 'blur(0px)' } : {}}
+      initial={{ opacity: 0, y: 40 }}
+      animate={inView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
       className={className}
     >
@@ -57,6 +62,7 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [hoveredCar, setHoveredCar] = useState<string | null>(null);
+  const [activeTestimonial, setActiveTestimonial] = useState(0);
 
   useEffect(() => {
     (async () => {
@@ -75,6 +81,14 @@ const Home = () => {
     scrollRef.current.scrollBy({ left: dir === 'left' ? -340 : 340, behavior: 'smooth' });
   };
 
+  // Auto-rotate testimonials
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveTestimonial(p => (p + 1) % testimonials.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
+
   const stats = [
     { value: 500, suffix: '+', label: 'Zufriedene Kunden' },
     { value: 150, suffix: '+', label: 'Premium Fahrzeuge' },
@@ -88,9 +102,37 @@ const Home = () => {
     { icon: Award, title: 'Premium Qualität', desc: 'Nur handverlesene Fahrzeuge mit lückenloser Historie.' },
   ];
 
+  const steps = [
+    { icon: Search, num: '01', title: 'Fahrzeug wählen', desc: 'Stöbern Sie in unserem Showroom oder auf Mobile.de und finden Sie Ihr Traumfahrzeug.' },
+    { icon: CarFront, num: '02', title: 'Probefahrt vereinbaren', desc: 'Rufen Sie uns an oder schreiben Sie per WhatsApp — wir vereinbaren einen Termin.' },
+    { icon: CheckCircle, num: '03', title: 'Kaufabschluss', desc: 'Finanzierung, Versicherung und Zulassung — alles aus einer Hand bei Autosmaya.' },
+  ];
+
+  const services = [
+    { icon: CreditCard, title: 'Finanzierung', desc: 'Flexible Finanzierungsoptionen mit günstigen Konditionen und schneller Zusage.' },
+    { icon: Shield, title: 'Garantie', desc: '12 Monate Garantie auf alle Fahrzeuge — für Ihre Sicherheit und Ihr Vertrauen.' },
+    { icon: FileCheck, title: 'Zulassung', desc: 'Wir kümmern uns um die komplette Zulassung — Sie fahren stressfrei los.' },
+    { icon: Wrench, title: 'Aufbereitung', desc: 'Jedes Fahrzeug wird professionell aufbereitet und in perfektem Zustand übergeben.' },
+  ];
+
+  const testimonials = [
+    { text: 'Absolut professioneller Service. Das Fahrzeug war in einem perfekten Zustand. Ich habe mich von Anfang an gut beraten gefühlt.', name: 'Mehmet K.', location: 'Dortmund', rating: 5 },
+    { text: 'Schnelle Abwicklung, fairer Preis und ein super Zustand des Fahrzeugs. Kann ich nur weiterempfehlen!', name: 'Sarah L.', location: 'Lünen', rating: 5 },
+    { text: 'Top Beratung und ehrliche Kommunikation. Der BMW wurde sogar noch besser übergeben als erwartet. Sehr zufrieden!', name: 'Thomas R.', location: 'Unna', rating: 5 },
+    { text: 'Endlich ein Händler, dem man vertrauen kann. Alles transparent, keine versteckten Mängel. Daumen hoch!', name: 'Fatima B.', location: 'Hamm', rating: 5 },
+  ];
+
   return (
     <div className="bg-[#050505]">
       <Hero />
+
+      {/* ─── BRAND MARQUEE ─── */}
+      <Section className="border-b border-white/[0.04]">
+        <div className="max-w-[1400px] mx-auto px-6 md:px-16 lg:px-24">
+          <p className="text-center text-white/20 text-xs uppercase tracking-[0.2em] pt-10">Wir führen Fahrzeuge von</p>
+        </div>
+        <MarqueeLogos />
+      </Section>
 
       {/* ─── STATS STRIP ─── */}
       <Section className="py-16 md:py-20 border-b border-white/[0.04]">
@@ -182,7 +224,7 @@ const Home = () => {
                         loading="lazy"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-                      {/* Price overlay — slide up on hover */}
+                      {/* Price overlay */}
                       <motion.div
                         className="absolute bottom-0 left-0 right-0 p-4"
                         animate={{ y: hoveredCar === car.id ? -4 : 0 }}
@@ -238,74 +280,180 @@ const Home = () => {
         </div>
       </Section>
 
-      {/* ─── WHY AUTOSMAYA — split layout ─── */}
-      <Section className="py-20 md:py-28 border-t border-white/[0.04]">
+      {/* ─── WHY AUTOSMAYA — SLEEK MINIMALIST ─── */}
+      <Section className="py-24 md:py-32 border-t border-white/[0.04]">
         <div className="max-w-[1400px] mx-auto px-6 md:px-16 lg:px-24">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
-            <ParallaxText>
-              <p className="text-[#EBA530] text-xs font-medium tracking-[0.2em] uppercase mb-3">Warum Autosmaya</p>
-              <h2 className="text-3xl md:text-5xl font-display font-bold text-white tracking-tight leading-tight mb-6">
-                Premium, ohne{'\n'}Kompromisse.
-              </h2>
-              <p className="text-white/35 text-base leading-relaxed max-w-md">
-                Bei uns finden Sie keine Massenware. Jedes Fahrzeug wird persönlich ausgewählt, geprüft und aufbereitet — für ein Kauferlebnis, das unseren Qualitätsansprüchen gerecht wird.
-              </p>
-            </ParallaxText>
+          <ParallaxText className="text-center mb-16 md:mb-24">
+            <p className="text-[#14A79D] text-xs font-medium tracking-[0.2em] uppercase mb-4">Warum Autosmaya</p>
+            <h2 className="text-3xl md:text-5xl font-display font-bold text-white tracking-tight leading-tight max-w-2xl mx-auto">
+              Premium Service ohne Kompromisse
+            </h2>
+          </ParallaxText>
 
-            <div className="space-y-0">
-              {benefits.map((b, i) => (
-                <motion.div
-                  key={b.title}
-                  initial={{ opacity: 0, x: 30, filter: 'blur(6px)' }}
-                  whileInView={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.6, delay: i * 0.12, ease: [0.22, 1, 0.36, 1] }}
-                  whileHover={{ x: 8, transition: { duration: 0.3 } }}
-                  className="flex gap-5 py-6 border-b border-white/[0.04] last:border-0 cursor-default group"
-                >
-                  <motion.div
-                    whileHover={{ rotate: 8, scale: 1.1 }}
-                    className="flex-shrink-0 w-10 h-10 rounded-xl bg-white/[0.03] group-hover:bg-[#14A79D]/10 flex items-center justify-center transition-colors duration-300"
-                  >
-                    <b.icon className="w-5 h-5 text-[#14A79D]" />
-                  </motion.div>
-                  <div>
-                    <h3 className="text-white font-display font-semibold mb-1 group-hover:text-[#14A79D] transition-colors duration-300">{b.title}</h3>
-                    <p className="text-white/35 text-sm leading-relaxed">{b.desc}</p>
-                  </div>
-                </motion.div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 md:gap-8">
+            {[...benefits, { icon: CreditCard, title: 'Finanzierung', desc: 'Flexible Finanzierung mit günstigen Konditionen.' }].map((b, i) => (
+              <motion.div
+                key={b.title}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.7, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] }}
+                className="text-center"
+              >
+                <div className="mx-auto w-12 h-12 flex items-center justify-center mb-6">
+                  <b.icon className="w-8 h-8 text-[#14A79D]" strokeWidth={1.5} />
+                </div>
+                <h3 className="text-white font-display font-semibold text-lg mb-3 tracking-wide">{b.title}</h3>
+                <p className="text-white/40 text-sm leading-relaxed max-w-[280px] mx-auto">{b.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </Section>
+
+      {/* ─── TESTIMONIALS — carousel ─── */}
+      <Section className="py-20 md:py-28 border-t border-white/[0.04]">
+        <div className="max-w-[900px] mx-auto px-6 md:px-16">
+          <ParallaxText className="text-center mb-12">
+            <p className="text-[#EBA530] text-xs font-medium tracking-[0.2em] uppercase mb-3">Kundenstimmen</p>
+            <h2 className="text-3xl md:text-4xl font-display font-bold text-white tracking-tight">
+              Was unsere Kunden sagen
+            </h2>
+          </ParallaxText>
+
+          <div className="relative">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeTestimonial}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                className="text-center"
+              >
+                {/* Stars */}
+                <div className="flex justify-center gap-1 mb-8">
+                  {[...Array(testimonials[activeTestimonial].rating)].map((_, i) => (
+                    <Star key={i} className="w-5 h-5 text-[#EBA530] fill-[#EBA530]" />
+                  ))}
+                </div>
+
+                {/* Quote icon */}
+                <Quote className="w-8 h-8 text-white/[0.06] mx-auto mb-6" />
+
+                {/* Quote text */}
+                <blockquote className="text-xl md:text-2xl text-white/80 font-display font-medium leading-relaxed mb-8">
+                  „{testimonials[activeTestimonial].text}"
+                </blockquote>
+
+                {/* Author */}
+                <div>
+                  <p className="text-white font-display font-semibold text-sm">{testimonials[activeTestimonial].name}</p>
+                  <p className="text-white/30 text-xs mt-1">{testimonials[activeTestimonial].location}</p>
+                </div>
+              </motion.div>
+            </AnimatePresence>
+
+            {/* Dots */}
+            <div className="flex justify-center gap-2 mt-10">
+              {testimonials.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setActiveTestimonial(i)}
+                  className={`rounded-full transition-all duration-300 ${
+                    i === activeTestimonial
+                      ? 'w-8 h-2 bg-[#14A79D]'
+                      : 'w-2 h-2 bg-white/10 hover:bg-white/20'
+                  }`}
+                />
               ))}
             </div>
           </div>
         </div>
       </Section>
 
-      {/* ─── TESTIMONIAL ─── */}
+      {/* ─── GOOGLE MAPS + LOCATION ─── */}
       <Section className="py-20 md:py-28 border-t border-white/[0.04]">
-        <div className="max-w-[800px] mx-auto px-6 md:px-16 text-center">
-          <div className="flex justify-center gap-1 mb-8">
-            {[...Array(5)].map((_, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, scale: 0 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] }}
-              >
-                <Star className="w-5 h-5 text-[#EBA530] fill-[#EBA530]" />
-              </motion.div>
-            ))}
+        <div className="max-w-[1400px] mx-auto px-6 md:px-16 lg:px-24">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-stretch">
+            {/* Info side */}
+            <ParallaxText className="flex flex-col justify-center">
+              <p className="text-[#14A79D] text-xs font-medium tracking-[0.2em] uppercase mb-3">Standort</p>
+              <h2 className="text-3xl md:text-4xl font-display font-bold text-white tracking-tight mb-6">
+                Besuchen Sie uns
+              </h2>
+
+              <div className="space-y-5 mb-8">
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-white/[0.03] flex items-center justify-center flex-shrink-0">
+                    <MapPin className="w-5 h-5 text-[#14A79D]" />
+                  </div>
+                  <div>
+                    <p className="text-white font-medium text-sm">Adresse</p>
+                    <p className="text-white/40 text-sm">Aplerbecker Straße 351, 44287 Dortmund</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-white/[0.03] flex items-center justify-center flex-shrink-0">
+                    <Clock className="w-5 h-5 text-[#14A79D]" />
+                  </div>
+                  <div>
+                    <p className="text-white font-medium text-sm">Öffnungszeiten</p>
+                    <div className="text-white/40 text-sm space-y-0.5 mt-1">
+                      <p>Mo – Fr: <span className="text-white/60">9:00 – 19:00 Uhr</span></p>
+                      <p>Sa: <span className="text-white/60">10:00 – 18:00 Uhr</span></p>
+                      <p>So: <span className="text-white/40">Geschlossen</span></p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-white/[0.03] flex items-center justify-center flex-shrink-0">
+                    <Phone className="w-5 h-5 text-[#14A79D]" />
+                  </div>
+                  <div>
+                    <p className="text-white font-medium text-sm">Telefon</p>
+                    <a href="tel:+4923069988585" className="text-white/40 text-sm hover:text-white transition-colors">+49 2306 9988585</a>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                <a
+                  href="https://maps.google.com/?q=Aplerbecker+Straße+351,+44287+Dortmund"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-primary text-sm"
+                >
+                  Route planen <ArrowRight className="w-4 h-4" />
+                </a>
+                <a href="tel:+4923069988585" className="btn-outline text-sm">
+                  <Phone className="w-4 h-4" /> Anrufen
+                </a>
+              </div>
+            </ParallaxText>
+
+            {/* Map */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+              className="rounded-2xl overflow-hidden border border-white/[0.04] bg-[#0a0a0a] min-h-[400px]"
+            >
+              <iframe
+                src="https://maps.google.com/maps?q=Aplerbecker+Straße+351,+44287+Dortmund&t=&z=15&ie=UTF8&iwloc=&output=embed"
+                width="100%"
+                height="100%"
+                style={{ border: 0, minHeight: '400px', filter: 'invert(90%) hue-rotate(180deg) brightness(0.8) contrast(1.2)' }}
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                title="Autosmaya Standort"
+              />
+            </motion.div>
           </div>
-          <motion.blockquote
-            initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-            className="text-xl md:text-2xl text-white/80 font-display font-medium leading-relaxed mb-8"
-          >
-            „Absolut professioneller Service. Das Fahrzeug war in einem perfekten Zustand. Ich habe mich von Anfang an gut beraten gefühlt."
-          </motion.blockquote>
-          <p className="text-white/30 text-sm">— Zufriedener Kunde aus Dortmund</p>
         </div>
       </Section>
 

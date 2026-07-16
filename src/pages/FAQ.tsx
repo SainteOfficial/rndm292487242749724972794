@@ -9,7 +9,7 @@ const faqs = [
   { q: 'Wie läuft der Kaufprozess ab?', a: 'Nach der Auswahl Ihres Wunschfahrzeugs vereinbaren wir einen Besichtigungs- und Probefahrttermin. Nach erfolgreicher Prüfung kümmern wir uns um alle Formalitäten — Zulassung, Versicherung und Übergabe.' },
   { q: 'Haben alle Fahrzeuge Garantie?', a: 'Ja, alle unsere Fahrzeuge werden mit mindestens 12 Monaten Garantie verkauft. Zudem sind alle Fahrzeuge TÜV-geprüft und technisch aufbereitet.' },
   { q: 'Kann ich mein altes Fahrzeug in Zahlung geben?', a: 'Selbstverständlich. Wir bieten faire Inzahlungnahme-Konditionen. Bringen Sie Ihr Fahrzeug einfach zur Bewertung vorbei oder kontaktieren Sie uns vorab.' },
-  { q: 'Wo befindet sich Autosmaya?', a: 'Unser Showroom befindet sich in der Münsterstraße 207, 44534 Lünen. Wir sind gut erreichbar über die A1/A2 und bieten ausreichend Parkplätze.' },
+  { q: 'Wo befindet sich Autosmaya?', a: 'Unser Showroom befindet sich in der Aplerbecker Straße 351, 44287 Dortmund. Wir sind gut erreichbar und bieten ausreichend Parkplätze.' },
   { q: 'Bieten Sie Probefahrten an?', a: 'Ja, Probefahrten sind nach Terminvereinbarung jederzeit möglich. Rufen Sie uns an oder nutzen Sie unser Kontaktformular.' },
   { q: 'Was ist im Preis enthalten?', a: 'Unsere Preise verstehen sich inklusive Mehrwertsteuer. Zulassung, Überführung und Versicherung können wir auf Wunsch übernehmen — sprechen Sie uns einfach an.' },
 ];

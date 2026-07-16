@@ -26,7 +26,7 @@ const Footer = () => (
         <div>
           <img src="/logov2.png" alt="Autosmaya" className="h-10 mb-6" />
           <p className="text-white/35 text-sm leading-relaxed max-w-xs">
-            Premium Gebrauchtwagen in Lünen. Handverlesene Qualität mit TÜV-Garantie.
+            Premium Gebrauchtwagen in Dortmund. Handverlesene Qualität mit TÜV-Garantie.
           </p>
         </div>
 
@@ -53,7 +53,7 @@ const Footer = () => (
           <ul className="space-y-3 text-sm text-white/40">
             <li className="flex items-start gap-3">
               <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0 text-white/25" />
-              <span>Münsterstraße 207<br />44534 Lünen</span>
+              <span>Aplerbecker Straße 351<br />44287 Dortmund</span>
             </li>
             <li>
               <a href="tel:+4923069988585" className="flex items-center gap-3 hover:text-white transition-colors duration-300">

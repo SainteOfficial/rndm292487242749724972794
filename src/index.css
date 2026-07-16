@@ -33,7 +33,13 @@ body {
   background-color: var(--color-bg);
   color: #fff;
   line-height: 1.6;
-  overflow-x: hidden;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  position: relative;
 }
 
 /* Headings use Outfit */

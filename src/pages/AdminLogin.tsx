@@ -43,8 +43,8 @@ const AdminLogin = () => {
       </div>
 
       <motion.div
-        initial={{ opacity: 0, y: 20, filter: 'blur(10px)' }}
-        animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
         className="relative w-full max-w-md"
       >

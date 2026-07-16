@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 
 const brands = [
   { name: "BMW", logo: "https://cdn.simpleicons.org/bmw/white" },
-  { name: "Mercedes-Benz", logo: "https://cdn.simpleicons.org/mercedes/white" },
+  { name: "Mercedes-Benz", logo: "/mercedes.svg" },
   { name: "Audi", logo: "https://cdn.simpleicons.org/audi/white" },
   { name: "Porsche", logo: "https://cdn.simpleicons.org/porsche/white" },
   { name: "Tesla", logo: "https://cdn.simpleicons.org/tesla/white" },

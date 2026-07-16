@@ -30,14 +30,14 @@ const BackToTop = () => {
     <AnimatePresence>
       {isVisible && (
         <motion.button
-          initial={{ opacity: 0, scale: 0.7, y: 20, filter: 'blur(8px)' }}
-          animate={{ opacity: 1, scale: 1, y: 0, filter: 'blur(0px)' }}
-          exit={{ opacity: 0, scale: 0.7, y: 20, filter: 'blur(8px)' }}
+          initial={{ opacity: 0, scale: 0.7, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.7, y: 20 }}
           whileHover={{ scale: 1.08 }}
           whileTap={{ scale: 0.92 }}
           transition={{ type: 'spring', stiffness: 300, damping: 20 }}
           onClick={scrollToTop}
-          className="fixed bottom-8 right-8 z-40 group"
+          className="fixed bottom-24 right-6 md:right-8 z-40 group"
           aria-label="Back to top"
         >
           {/* Progress Ring */}

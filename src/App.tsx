@@ -7,6 +7,7 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import BackToTop from './components/BackToTop';
 import PageTransition from './components/PageTransition';
+import WhatsAppButton from './components/WhatsAppButton';
 
 import Home from './pages/Home';
 import Showroom from './pages/Showroom';
@@ -17,6 +18,7 @@ import Gallery from './pages/Gallery';
 import Legal from './pages/Legal';
 import Admin from './pages/Admin';
 import AdminLogin from './pages/AdminLogin';
+import NotFound from './pages/NotFound';
 
 import { supabase } from './lib/supabase';
 
@@ -40,6 +42,7 @@ const AnimatedRoutes = () => {
         <Route path="/legal" element={<PageTransition><Legal /></PageTransition>} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
       </Routes>
     </AnimatePresence>
   );
@@ -96,6 +99,7 @@ function App() {
           </main>
           <Footer />
           <BackToTop />
+          <WhatsAppButton />
           <Toaster
             position="bottom-right"
             toastOptions={{

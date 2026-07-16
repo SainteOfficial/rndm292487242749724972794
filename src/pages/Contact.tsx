@@ -32,7 +32,7 @@ const Contact = () => {
   const contactInfo = [
     { icon: Phone, label: 'Telefon', value: '+49 2306 9988585', href: 'tel:+4923069988585' },
     { icon: Mail, label: 'E-Mail', value: 'kfzhandelsmaya@autosmaya.de', href: 'mailto:kfzhandelsmaya@autosmaya.de' },
-    { icon: MapPin, label: 'Adresse', value: 'Münsterstraße 207, 44534 Lünen', href: 'https://maps.google.com/?q=Münsterstraße+207+44534+Lünen' },
+    { icon: MapPin, label: 'Adresse', value: 'Aplerbecker Straße 351, 44287 Dortmund', href: 'https://maps.google.com/?q=Aplerbecker+Straße+351+44287+Dortmund' },
     { icon: Clock, label: 'Öffnungszeiten', value: 'Mo–Fr 9–19 Uhr | Sa 10–18 Uhr' },
   ];
 
@@ -122,7 +122,7 @@ const Contact = () => {
         <Section className="mt-20">
           <div className="rounded-2xl overflow-hidden h-[300px] md:h-[400px] border border-white/[0.04]">
             <iframe
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2478.5!2d7.551914!3d51.625382!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNTHCsDM3JzMxLjQiTiA3wrAzMycwNi45IkU!5e0!3m2!1sde!2sde!4v1"
+              src="https://maps.google.com/maps?q=Aplerbecker+Straße+351,+44287+Dortmund&t=&z=15&ie=UTF8&iwloc=&output=embed"
               width="100%" height="100%" style={{ border: 0, filter: 'invert(90%) hue-rotate(180deg) grayscale(30%)' }}
               allowFullScreen loading="lazy" referrerPolicy="no-referrer-when-downgrade"
             />

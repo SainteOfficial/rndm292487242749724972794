@@ -21,8 +21,8 @@ const sections = [
     title: 'Impressum',
     content: `Autosmaya – KFZ Handel
 Inhaber: Salaheddine Khammale
-Münsterstraße 207
-44534 Lünen
+Aplerbecker Straße 351
+44287 Dortmund
 
 Telefon: +49 2306 9988585
 E-Mail: kfzhandelsmaya@autosmaya.de
@@ -86,7 +86,7 @@ Autosmaya haftet für Schäden nur bei Vorsatz und grober Fahrlässigkeit. Dies 
 
 6. Schlussbestimmungen
 
-Es gilt das Recht der Bundesrepublik Deutschland. Gerichtsstand ist Lünen, soweit gesetzlich zulässig.`,
+Es gilt das Recht der Bundesrepublik Deutschland. Gerichtsstand ist Dortmund, soweit gesetzlich zulässig.`,
   },
 ];
 

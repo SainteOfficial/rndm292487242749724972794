@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, ChevronDown, Phone, Settings } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { ArrowRight, ChevronDown, Phone, Settings, Search } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 
 const fallbackSlides = [
@@ -15,6 +15,8 @@ const Hero = () => {
     const [current, setCurrent] = useState(0);
     const [heroImages, setHeroImages] = useState<string[]>([]);
     const [imagesLoaded, setImagesLoaded] = useState<boolean[]>([]);
+    const [searchQuery, setSearchQuery] = useState('');
+    const navigate = useNavigate();
 
     // Fetch car images from Supabase to use as hero backgrounds
     useEffect(() => {
@@ -63,8 +65,15 @@ const Hero = () => {
     const slide = fallbackSlides[current % fallbackSlides.length];
     const currentImage = heroImages[current % heroImages.length];
 
+    const handleSearch = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (searchQuery.trim()) {
+            navigate(`/showroom?q=${encodeURIComponent(searchQuery)}`);
+        }
+    };
+
     return (
-        <section className="relative h-screen w-full overflow-hidden bg-black">
+        <section className="relative h-[75vh] min-h-[600px] max-h-[800px] w-full overflow-hidden bg-black">
             {/* Background images with Ken Burns zoom */}
             <AnimatePresence mode="sync">
                 {currentImage && (
@@ -79,8 +88,8 @@ const Hero = () => {
                         <motion.img
                             src={currentImage}
                             alt=""
-                            className="w-full h-full object-cover"
-                            animate={{ scale: 1.08 }}
+                            className="w-full h-full object-cover object-center"
+                            animate={{ scale: 1.03 }}
                             transition={{ duration: 8, ease: 'linear' }}
                         />
                     </motion.div>
@@ -144,8 +153,8 @@ const Hero = () => {
 
                         {/* Subtitle */}
                         <motion.p
-                            initial={{ opacity: 0, y: 20, filter: 'blur(4px)' }}
-                            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.6, delay: 0.45, ease: [0.22, 1, 0.36, 1] }}
                             className="text-white/45 text-base md:text-lg max-w-lg mb-10 md:mb-12 leading-relaxed"
                         >
@@ -165,10 +174,33 @@ const Hero = () => {
                                     <ArrowRight className="w-4 h-4" />
                                 </motion.span>
                             </Link>
-                            <a href="tel:+4923069988585" className="btn-outline">
-                                <Phone className="w-4 h-4" /> Anrufen
-                            </a>
                         </motion.div>
+
+                        {/* Search Bar */}
+                        <motion.form 
+                            onSubmit={handleSearch}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.6, delay: 0.65, ease: [0.22, 1, 0.36, 1] }}
+                            className="mt-10 relative max-w-xl group"
+                        >
+                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                <Search className="h-5 w-5 text-white/40 group-focus-within:text-[#14A79D] transition-colors duration-300" />
+                            </div>
+                            <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="Marke oder Modell suchen..."
+                                className="block w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#14A79D]/50 focus:border-transparent focus:bg-white/10 transition-all duration-300 backdrop-blur-md"
+                            />
+                            <button
+                                type="submit"
+                                className="absolute inset-y-2 right-2 px-6 bg-[#14A79D] text-white text-sm font-medium rounded-xl hover:bg-[#118f86] transition-colors duration-300 flex items-center justify-center shadow-[0_0_15px_rgba(20,167,157,0.3)]"
+                            >
+                                Suchen
+                            </button>
+                        </motion.form>
                     </motion.div>
                 </AnimatePresence>
 

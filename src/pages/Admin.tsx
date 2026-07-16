@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
@@ -33,7 +33,9 @@ import {
   File,
   Activity,
   Eye,
-  CheckCircle
+  CheckCircle,
+  RefreshCw,
+  Download
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ImageUpload from '../components/ImageUpload';
@@ -64,6 +66,10 @@ const Admin = () => {
   const [loadingInquiries, setLoadingInquiries] = useState(false);
   const [selectedInquiry, setSelectedInquiry] = useState<any | null>(null);
   const [inquiryFilter, setInquiryFilter] = useState<'all' | 'new' | 'read' | 'replied'>('all');
+  const [mobileDeAds, setMobileDeAds] = useState<any[]>([]);
+  const [loadingMobileDeAds, setLoadingMobileDeAds] = useState(false);
+  const [includeInactiveMobile, setIncludeInactiveMobile] = useState(true);
+  const [importing, setImporting] = useState(false);
 
   const categories = [
     'Exterieur',
@@ -362,6 +368,191 @@ const Admin = () => {
         [field]: value
       }
     }));
+  };
+
+  const fetchMobileDeAds = async () => {
+    setLoadingMobileDeAds(true);
+    const toastId = toast.loading('Lade Inserate von Mobile.de API...');
+    try {
+      const { data, error } = await supabase.functions.invoke('mobile-de-sync', {
+        body: { action: 'list', includeInactive: includeInactiveMobile }
+      });
+      if (error) throw error;
+      if (data && data.ads) {
+        setMobileDeAds(data.ads);
+        toast.success(`${data.ads.length} Inserate gefunden!`, { id: toastId });
+      } else {
+        throw new Error('Keine Inserate gefunden oder falsche Zugangsdaten.');
+      }
+    } catch (err: any) {
+      console.error(err);
+      toast.error('Fehler beim Abrufen der API-Daten: ' + err.message, { id: toastId, duration: 4000 });
+    } finally {
+      setLoadingMobileDeAds(false);
+    }
+  };
+
+  const importSpecificAd = async (adId: string) => {
+    setImporting(true);
+    const toastId = toast.loading('Fahrzeugdaten und alle Bilder werden geladen...');
+    try {
+      const { data, error } = await supabase.functions.invoke('mobile-de-sync', {
+        body: { action: 'get', id: adId }
+      });
+      if (error) throw error;
+      
+      const ad = data;
+      
+      // Extract images (fallback to smaller sizes if xxl is missing)
+      const images = (ad.images || []).map((img: any) => img.xxl || img.xl || img.l || img.m || img.s);
+      
+      // Comprehensive feature mapping
+      const features = [];
+      if (ad.abs) features.push('ABS');
+      if (ad.esp) features.push('ESP');
+      if (ad.bluetooth) features.push('Bluetooth');
+      if (ad.navigationSystem) features.push('Navigationssystem');
+      if (ad.sunroof) features.push('Schiebedach');
+      if (ad.leatherSteeringWheel) features.push('Lederlenkrad');
+      if (ad.electricTailgate) features.push('Elektrische Heckklappe');
+      if (ad.electricHeatedSeats || ad.seatHeating) features.push('Sitzheizung');
+      if (ad.climatisation) features.push(ad.climatisation.includes('AUTOMATIC') ? 'Klimaautomatik' : 'Klimaanlage');
+      if (ad.alloyWheels) features.push('Leichtmetallfelgen');
+      if (ad.isofix) features.push('Isofix');
+      if (ad.automaticRainSensor) features.push('Regensensor');
+      if (ad.lightSensor) features.push('Lichtsensor');
+      if (ad.centralLocking) features.push('Zentralverriegelung');
+      if (ad.electricAdjustableSeats) features.push('Elektr. Sitzeinstellung');
+      if (ad.electricExteriorMirrors) features.push('Elektr. Seitenspiegel');
+      if (ad.electricWindows) features.push('Elektr. Fensterheber');
+      if (ad.frontFogLights) features.push('Nebelscheinwerfer');
+      if (ad.handsFreePhoneSystem) features.push('Freisprecheinrichtung');
+      if (ad.headUpDisplay) features.push('Head-Up Display');
+      if (ad.immobilizer) features.push('Wegfahrsperre');
+      if (ad.multifunctionalWheel) features.push('Multifunktionslenkrad');
+      if (ad.onBoardComputer) features.push('Bordcomputer');
+      if (ad.speedControl) features.push('Tempomat');
+      if (ad.powerAssistedSteering) features.push('Servolenkung');
+      if (ad.alarmSystem) features.push('Alarmanlage');
+      if (ad.armRest) features.push('Armlehne');
+      if (ad.hillStartAssist) features.push('Berganfahrassistent');
+      if (ad.lumbarSupport) features.push('Lordosenstütze');
+      if (ad.massageSeats) features.push('Massagesitze');
+      if (ad.fatigueWarningSystem) features.push('Müdigkeitswarner');
+      if (ad.emergencyCallSystem) features.push('Notrufsystem');
+      if (ad.tirePressureMonitoring) features.push('Reifendruckkontrolle');
+      if (ad.paddleShifters) features.push('Schaltwippen');
+      if (ad.soundSystem) features.push('Soundsystem');
+      if (ad.usb) features.push('USB');
+      if (ad.highBeamAssist) features.push('Fernlichtassistent');
+      if (ad.distanceWarningSystem) features.push('Abstandswarner');
+      if (ad.ambientLighting) features.push('Ambiente-Beleuchtung');
+      if (ad.carplay) features.push('Apple CarPlay');
+      if (ad.androidAuto) features.push('Android Auto');
+      if (ad.digitalCockpit) features.push('Volldigitales Kombiinstrument');
+      if (ad.wirelessCharging) features.push('Induktionsladen für Smartphones');
+      if (ad.keylessEntry) features.push('Schlüssellose Zentralverriegelung');
+      if (ad.laneDepartureWarning) features.push('Spurhalteassistent');
+      if (ad.blindSpotMonitor) features.push('Totwinkel-Assistent');
+      
+      // Parking assistants mapping
+      if (ad.parkingAssistants) {
+        if (ad.parkingAssistants.includes('FRONT_SENSORS')) features.push('Einparkhilfe vorne');
+        if (ad.parkingAssistants.includes('REAR_SENSORS')) features.push('Einparkhilfe hinten');
+        if (ad.parkingAssistants.includes('CAM_360_DEGREES')) features.push('360°-Kamera');
+        if (ad.parkingAssistants.includes('AUTOMATIC_PARKING')) features.push('Selbstlenkende Systeme');
+      }
+      
+      // Headlight mapping
+      if (ad.headlightType === 'LED_HEADLIGHTS') features.push('LED-Scheinwerfer');
+      if (ad.daytimeRunningLamps === 'LED_RUNNING_LIGHTS') features.push('LED-Tagfahrlicht');
+      if (ad.bendingLightsType) features.push('Kurvenlicht');
+
+      // Description parsing & cleaning
+      let rawDesc = ad.description || ad.modelDescription || '';
+      rawDesc = rawDesc.replace(/\\\\/g, '\n').replace(/\\/g, '\n');
+      
+      const sonderMatch = rawDesc.match(/\*\*Sonderausstattung:\*\*\n(.*?)(?=\n\*\*|$)/s);
+      if (sonderMatch) {
+        features.push(...sonderMatch[1].split(',').map((s: string) => s.trim()).filter(Boolean));
+        // Replace commas with newlines in the description for better readability
+        rawDesc = rawDesc.replace(sonderMatch[1], sonderMatch[1].replace(/,\s*/g, '\n- '));
+      }
+
+      const weitereMatch = rawDesc.match(/\*\*Weitere Ausstattung:\*\*\n(.*?)(?=\n\*\*|$)/s);
+      if (weitereMatch) {
+        features.push(...weitereMatch[1].split(',').map((s: string) => s.trim()).filter(Boolean));
+        rawDesc = rawDesc.replace(weitereMatch[1], weitereMatch[1].replace(/,\s*/g, '\n- '));
+      }
+      
+      // Clean up remaining description formatting
+      let cleanDesc = rawDesc.replace(/\*\*(.*?)\*\*/g, '$1').trim();
+      
+      // Deduplicate features (since API booleans might overlap with parsed text)
+      const uniqueFeatures = Array.from(new Set(features));
+      
+      // Helper for colors
+      const colorMap: Record<string, string> = {
+        'BLACK': 'Schwarz', 'WHITE': 'Weiß', 'GREY': 'Grau', 'SILVER': 'Silber', 
+        'BLUE': 'Blau', 'RED': 'Rot', 'GREEN': 'Grün', 'YELLOW': 'Gelb', 'ORANGE': 'Orange'
+      };
+      const interiorMap: Record<string, string> = {
+        'ALCANTARA': 'Alcantara', 'LEATHER': 'Leder', 'PARTIAL_LEATHER': 'Teilleder', 'CLOTH': 'Stoff', 'VELOUR': 'Velours'
+      };
+      const doorsMap: Record<string, string> = {
+        'TWO_OR_THREE': '2/3', 'FOUR_OR_FIVE': '4/5', 'SIX_OR_SEVEN': '6/7'
+      };
+
+      setEditingCar((prev: any) => ({
+         ...prev,
+         brand: ad.make || prev.brand,
+         model: ad.model || prev.model,
+         year: ad.firstRegistration ? parseInt(ad.firstRegistration.substring(0, 4), 10) : prev.year,
+         price: ad.price?.consumerPriceGross ? parseFloat(ad.price.consumerPriceGross) : prev.price,
+         mileage: ad.mileage || prev.mileage,
+         description: cleanDesc || prev.description,
+         images: images.length > 0 ? images : prev.images,
+         condition: {
+            type: ad.condition === 'USED' ? 'Gebraucht' : 'Neu',
+            accident: ad.accidentDamaged || false,
+            previousOwners: ad.numberOfPreviousOwners || 0,
+            warranty: ad.warranty || false,
+            serviceHistory: ad.fullServiceHistory || false,
+         },
+         specs: {
+            engine: ad.fuel === 'DIESEL' ? 'Diesel' : ad.fuel === 'PETROL' ? 'Benzin' : ad.fuel === 'HYBRID' ? 'Hybrid' : ad.fuel === 'ELECTRIC' ? 'Elektro' : ad.fuel || '',
+            power: ad.power ? `${ad.power} kW` : '',
+            transmission: ad.gearbox === 'AUTOMATIC_GEAR' ? 'Automatik' : ad.gearbox === 'MANUAL_GEAR' ? 'Schaltgetriebe' : 'Halbautomatik',
+            fuelType: ad.fuel === 'DIESEL' ? 'Diesel' : ad.fuel === 'PETROL' ? 'Benzin' : ad.fuel === 'HYBRID' ? 'Hybrid' : ad.fuel === 'ELECTRIC' ? 'Elektro' : 'Benzin',
+            color: colorMap[ad.exteriorColor] || ad.exteriorColor || '',
+            interiorColor: interiorMap[ad.interiorType] || ad.interiorType || '',
+            doors: doorsMap[ad.doors] || ad.doors || '',
+            seats: ad.seats ? ad.seats.toString() : '',
+            emissionClass: ad.emissionClass ? ad.emissionClass.replace('EURO', 'Euro ') : '',
+            environmentBadge: ad.emissionSticker === 'EMISSIONSSTICKER_GREEN' ? '4 (Grün)' : '',
+            inspection: ad.newHuAu ? 'Neu' : '',
+            hubraum: ad.cubicCapacity ? `${ad.cubicCapacity} cm³` : '',
+            category: ad.category || '',
+            cylinders: ad.cylinder ? ad.cylinder.toString() : '',
+            tankVolume: ad.fuelTankVolume ? `${ad.fuelTankVolume} l` : '',
+            trailerLoad: ad.trailerLoadBraked ? `${ad.trailerLoadBraked} kg (gebremst)` : '',
+            consumption: ad.consumptions && ad.consumptions.length > 0 ? `${ad.consumptions[0].consumptionCombined} l/100km` : '',
+            emissions: ad.emissions && ad.emissions.length > 0 ? `${ad.emissions[0].co2EmissionCombined} g/km` : '',
+            airConditioning: ad.climatisation ? (ad.climatisation.includes('AUTOMATIC') ? 'Klimaautomatik' : 'Klimaanlage') : '',
+            parkingAssist: ad.parkingAssistants ? ad.parkingAssistants.map((p:string) => p === 'FRONT_SENSORS' ? 'Vorne' : p === 'REAR_SENSORS' ? 'Hinten' : p === 'CAM_360_DEGREES' ? '360°-Kamera' : p === 'AUTOMATIC_PARKING' ? 'Selbstlenkend' : p).join(', ') : '',
+            airbags: ad.airbag ? ad.airbag.replace(/_/g, ' ') : ''
+         },
+         additionalFeatures: uniqueFeatures.length > 0 ? uniqueFeatures : prev.additionalFeatures,
+         status: 'available'
+      }));
+      
+      toast.success('Fahrzeug erfolgreich importiert! Bitte prüfe alle Felder und klicke auf Speichern.', { id: toastId, duration: 4000 });
+    } catch (err: any) {
+      console.error(err);
+      toast.error('Fehler beim Importieren: ' + err.message, { id: toastId });
+    } finally {
+      setImporting(false);
+    }
   };
 
   // Function to fetch gallery images
@@ -1124,6 +1315,63 @@ const Admin = () => {
                   {/* Existing Tabs Content */}
                   {activeTab === 'basic' && (
                     <>
+                      {/* Mobile.de API Import */}
+                      <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-4 mb-6">
+                        <div className="flex justify-between items-center mb-4">
+                          <label className="text-white/70 text-sm font-medium flex items-center gap-2">
+                            <Sparkles className="w-4 h-4 text-[#FF6600]" />
+                            Mobile.de API Sync
+                          </label>
+                          <div className="flex items-center gap-3">
+                            <label className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={includeInactiveMobile}
+                                onChange={(e) => setIncludeInactiveMobile(e.target.checked)}
+                                className="w-4 h-4 rounded bg-white/5 border-white/10 text-[#FF6600] focus:ring-[#FF6600]"
+                              />
+                              <span className="text-white/50 text-xs">Inaktive einbeziehen</span>
+                            </label>
+                            <button
+                              onClick={fetchMobileDeAds}
+                              disabled={loadingMobileDeAds}
+                              className="bg-[#FF6600]/10 hover:bg-[#FF6600]/20 text-[#FF6600] px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 flex items-center gap-2"
+                            >
+                              <RefreshCw className={`w-4 h-4 ${loadingMobileDeAds ? 'animate-spin' : ''}`} />
+                              {loadingMobileDeAds ? 'Lade...' : 'Bestand abrufen'}
+                            </button>
+                          </div>
+                        </div>
+                        
+                        {mobileDeAds.length > 0 && (
+                          <div className="flex flex-col gap-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                            {mobileDeAds.map(ad => (
+                              <div key={ad.mobileAdId} className="flex justify-between items-center bg-white/[0.04] p-3 rounded-lg border border-white/[0.05]">
+                                <div>
+                                  <div className="text-white text-sm font-medium">{ad.make} {ad.model}</div>
+                                  <div className="text-white/50 text-xs mt-1">
+                                    {ad.mileage?.toLocaleString()} km • {ad.price?.consumerPriceGross} €
+                                  </div>
+                                </div>
+                                <button
+                                  onClick={() => importSpecificAd(ad.mobileAdId)}
+                                  disabled={importing}
+                                  className="bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg text-xs transition-colors disabled:opacity-50 flex items-center gap-2"
+                                >
+                                  <Download className="w-3 h-3" />
+                                  Importieren
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {mobileDeAds.length === 0 && (
+                          <p className="text-white/30 text-xs mt-3 bg-[#FF6600]/5 p-2 rounded border border-[#FF6600]/10">
+                            Klicke auf "Bestand abrufen", um alle deine aktuellen Inserate über die offizielle Mobile.de Schnittstelle zu laden.
+                          </p>
+                        )}
+                      </div>
+
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                           <label className="block text-gray-300 mb-2 flex items-center">

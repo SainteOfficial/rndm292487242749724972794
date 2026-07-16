@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence, useInView } from 'framer-motion';
-import { Search, SlidersHorizontal, X, Heart, ArrowUpRight, Fuel, Gauge, Calendar } from 'lucide-react';
+import { Search, SlidersHorizontal, X, Heart, ArrowUpRight, Fuel, Gauge, Calendar, LayoutGrid, LayoutList, Settings, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 
@@ -21,10 +21,12 @@ const Showroom = () => {
   const [search, setSearch] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [sort, setSort] = useState('newest');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [inventorySource, setInventorySource] = useState<'local' | 'mobilede'>('local');
   const [favorites, setFavorites] = useState<string[]>(() => {
     try { return JSON.parse(localStorage.getItem('favorites') || '[]'); } catch { return []; }
   });
-  const [filters, setFilters] = useState({ brand: '', fuel: '', minPrice: '', maxPrice: '' });
+  const [filters, setFilters] = useState({ brand: '', fuel: '', transmission: '', minPrice: '', maxPrice: '', minYear: '', maxYear: '' });
 
   useEffect(() => {
     (async () => {
@@ -44,6 +46,7 @@ const Showroom = () => {
 
   const brands = [...new Set(cars.map(c => c.brand))].sort();
   const fuels = [...new Set(cars.map(c => c.fuel))].filter(Boolean).sort();
+  const transmissions = [...new Set(cars.map(c => c.transmission))].filter(Boolean).sort();
 
   const filtered = cars
     .filter(c => {
@@ -51,18 +54,24 @@ const Showroom = () => {
       if (q && !`${c.brand} ${c.model}`.toLowerCase().includes(q)) return false;
       if (filters.brand && c.brand !== filters.brand) return false;
       if (filters.fuel && c.fuel !== filters.fuel) return false;
+      if (filters.transmission && c.transmission !== filters.transmission) return false;
       if (filters.minPrice && c.price < Number(filters.minPrice)) return false;
       if (filters.maxPrice && c.price > Number(filters.maxPrice)) return false;
+      if (filters.minYear && c.year < Number(filters.minYear)) return false;
+      if (filters.maxYear && c.year > Number(filters.maxYear)) return false;
       return true;
     })
     .sort((a, b) => {
       if (sort === 'price-asc') return a.price - b.price;
       if (sort === 'price-desc') return b.price - a.price;
+      if (sort === 'mileage-asc') return a.mileage - b.mileage;
+      if (sort === 'year-desc') return b.year - a.year;
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
 
-  const clearFilters = () => { setFilters({ brand: '', fuel: '', minPrice: '', maxPrice: '' }); setSearch(''); };
-  const hasFilters = search || filters.brand || filters.fuel || filters.minPrice || filters.maxPrice;
+  const clearFilters = () => { setFilters({ brand: '', fuel: '', transmission: '', minPrice: '', maxPrice: '', minYear: '', maxYear: '' }); setSearch(''); };
+  const hasFilters = search || filters.brand || filters.fuel || filters.transmission || filters.minPrice || filters.maxPrice || filters.minYear || filters.maxYear;
+  const activeFilterCount = [filters.brand, filters.fuel, filters.transmission, filters.minPrice, filters.maxPrice, filters.minYear, filters.maxYear].filter(Boolean).length;
 
   return (
     <div className="min-h-screen bg-[#050505] pt-24 pb-20">
@@ -78,8 +87,40 @@ const Showroom = () => {
           </p>
         </Section>
 
-        {/* Search & Filter bar */}
-        <Section className="mb-10">
+        {/* Inventory Source Tabs */}
+        <div className="flex gap-2 mb-8 bg-white/[0.02] p-1.5 rounded-xl border border-white/[0.04] w-fit">
+          <button
+            onClick={() => setInventorySource('local')}
+            className={`px-6 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 ${inventorySource === 'local' ? 'bg-[#14A79D] text-white shadow-lg shadow-[#14A79D]/20' : 'text-white/40 hover:text-white/70'}`}
+          >
+            Lokaler Bestand
+          </button>
+          <button
+            onClick={() => setInventorySource('mobilede')}
+            className={`px-6 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 flex items-center gap-2 ${inventorySource === 'mobilede' ? 'bg-[#FF6600] text-white shadow-lg shadow-[#FF6600]/20' : 'text-white/40 hover:text-white/70'}`}
+          >
+            Mobile.de Bestand <ExternalLink className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        {inventorySource === 'mobilede' ? (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="w-full h-[800px] rounded-2xl overflow-hidden border border-white/[0.06] bg-white"
+          >
+            <iframe
+              src="https://home.mobile.de/home/index.html?partnerHead=false&customerId=25931355"
+              width="100%"
+              height="100%"
+              style={{ border: 0 }}
+              title="Mobile.de Fahrzeugbestand"
+            />
+          </motion.div>
+        ) : (
+          <>
+            {/* Search & Filter bar */}
+            <Section className="mb-10">
           <div className="flex flex-col md:flex-row gap-4">
             {/* Search */}
             <div className="relative flex-1">
@@ -91,18 +132,41 @@ const Showroom = () => {
               />
             </div>
 
-            {/* Filter toggle + sort */}
+            {/* Filter toggle + sort + view toggle */}
             <div className="flex gap-3">
               <button onClick={() => setShowFilters(!showFilters)}
-                className={`flex items-center gap-2 px-5 py-3.5 rounded-xl border text-sm transition-all duration-300 ${showFilters ? 'bg-[#14A79D]/10 border-[#14A79D]/30 text-[#14A79D]' : 'bg-white/[0.03] border-white/[0.06] text-white/50 hover:text-white'}`}>
+                className={`relative flex items-center gap-2 px-5 py-3.5 rounded-xl border text-sm transition-all duration-300 ${showFilters ? 'bg-[#14A79D]/10 border-[#14A79D]/30 text-[#14A79D]' : 'bg-white/[0.03] border-white/[0.06] text-white/50 hover:text-white'}`}>
                 <SlidersHorizontal className="w-4 h-4" /> Filter
+                {activeFilterCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[#14A79D] text-white text-[10px] font-bold flex items-center justify-center">
+                    {activeFilterCount}
+                  </span>
+                )}
               </button>
               <select value={sort} onChange={e => setSort(e.target.value)}
                 className="px-4 py-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06] text-white text-sm focus:outline-none focus:border-[#14A79D]/40 transition-all duration-300">
                 <option value="newest">Neueste zuerst</option>
                 <option value="price-asc">Preis aufsteigend</option>
                 <option value="price-desc">Preis absteigend</option>
+                <option value="mileage-asc">Kilometerstand ↑</option>
+                <option value="year-desc">Baujahr ↓</option>
               </select>
+
+              {/* View mode toggle */}
+              <div className="hidden md:flex rounded-xl border border-white/[0.06] overflow-hidden">
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`p-3.5 transition-all duration-300 ${viewMode === 'grid' ? 'bg-[#14A79D]/10 text-[#14A79D]' : 'bg-white/[0.03] text-white/40 hover:text-white'}`}
+                >
+                  <LayoutGrid className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`p-3.5 transition-all duration-300 ${viewMode === 'list' ? 'bg-[#14A79D]/10 text-[#14A79D]' : 'bg-white/[0.03] text-white/40 hover:text-white'}`}
+                >
+                  <LayoutList className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </div>
 
@@ -121,10 +185,26 @@ const Showroom = () => {
                     <option value="">Alle Kraftstoffe</option>
                     {fuels.map(f => <option key={f} value={f}>{f}</option>)}
                   </select>
-                  <input type="number" placeholder="Min. Preis" value={filters.minPrice} onChange={e => setFilters({ ...filters, minPrice: e.target.value })}
-                    className="px-4 py-3 rounded-xl bg-white/[0.03] border border-white/[0.06] text-white text-sm placeholder:text-white/25 focus:outline-none" />
-                  <input type="number" placeholder="Max. Preis" value={filters.maxPrice} onChange={e => setFilters({ ...filters, maxPrice: e.target.value })}
-                    className="px-4 py-3 rounded-xl bg-white/[0.03] border border-white/[0.06] text-white text-sm placeholder:text-white/25 focus:outline-none" />
+                  <select value={filters.transmission} onChange={e => setFilters({ ...filters, transmission: e.target.value })}
+                    className="px-4 py-3 rounded-xl bg-white/[0.03] border border-white/[0.06] text-white text-sm focus:outline-none">
+                    <option value="">Alle Getriebe</option>
+                    {transmissions.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                  <div className="flex gap-2">
+                    <input type="number" placeholder="Min. Preis" value={filters.minPrice} onChange={e => setFilters({ ...filters, minPrice: e.target.value })}
+                      className="w-1/2 px-3 py-3 rounded-xl bg-white/[0.03] border border-white/[0.06] text-white text-sm placeholder:text-white/25 focus:outline-none" />
+                    <input type="number" placeholder="Max. Preis" value={filters.maxPrice} onChange={e => setFilters({ ...filters, maxPrice: e.target.value })}
+                      className="w-1/2 px-3 py-3 rounded-xl bg-white/[0.03] border border-white/[0.06] text-white text-sm placeholder:text-white/25 focus:outline-none" />
+                  </div>
+                </div>
+                {/* Second row */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-3">
+                  <div className="flex gap-2 col-span-2">
+                    <input type="number" placeholder="Baujahr ab" value={filters.minYear} onChange={e => setFilters({ ...filters, minYear: e.target.value })}
+                      className="w-1/2 px-3 py-3 rounded-xl bg-white/[0.03] border border-white/[0.06] text-white text-sm placeholder:text-white/25 focus:outline-none" />
+                    <input type="number" placeholder="Baujahr bis" value={filters.maxYear} onChange={e => setFilters({ ...filters, maxYear: e.target.value })}
+                      className="w-1/2 px-3 py-3 rounded-xl bg-white/[0.03] border border-white/[0.06] text-white text-sm placeholder:text-white/25 focus:outline-none" />
+                  </div>
                 </div>
                 {hasFilters && (
                   <button onClick={clearFilters} className="flex items-center gap-1.5 mt-3 text-xs text-white/40 hover:text-white transition-colors">
@@ -137,11 +217,23 @@ const Showroom = () => {
         </Section>
 
         {/* Results count */}
-        <div className="mb-6 text-sm text-white/30">
-          {filtered.length} Fahrzeug{filtered.length !== 1 ? 'e' : ''} gefunden
+        <div className="mb-6 flex items-center justify-between">
+          <span className="text-sm text-white/30">
+            {filtered.length} Fahrzeug{filtered.length !== 1 ? 'e' : ''} gefunden
+          </span>
+          {/* Mobile.de link */}
+          <a
+            href="https://www.mobile.de/haendler/autosmaya/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 text-xs text-[#FF6600]/70 hover:text-[#FF6600] transition-colors duration-300"
+          >
+            <ExternalLink className="w-3 h-3" />
+            Alle Inserate auf Mobile.de
+          </a>
         </div>
 
-        {/* Car Grid */}
+        {/* Car Grid / List */}
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(6)].map((_, i) => (
@@ -159,7 +251,8 @@ const Showroom = () => {
             <p className="text-white/40 text-lg mb-4">Keine Fahrzeuge gefunden</p>
             <button onClick={clearFilters} className="btn-outline text-sm">Filter zurücksetzen</button>
           </div>
-        ) : (
+        ) : viewMode === 'grid' ? (
+          /* ─── GRID VIEW ─── */
           <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             <AnimatePresence mode="popLayout">
               {filtered.map((car, i) => (
@@ -179,7 +272,9 @@ const Showroom = () => {
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                         loading="lazy"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                      {/* Watermark */}
+                      <img src="/logov2.png" alt="" className="absolute bottom-4 right-4 w-24 opacity-40 pointer-events-none drop-shadow-md z-10" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent z-10" />
 
                       {/* Price */}
                       <div className="absolute bottom-4 left-4">
@@ -212,12 +307,83 @@ const Showroom = () => {
                         <span className="flex items-center gap-1"><Gauge className="w-3 h-3" />{car.mileage?.toLocaleString()} km</span>
                         {car.fuel && <span className="flex items-center gap-1"><Fuel className="w-3 h-3" />{car.fuel}</span>}
                       </div>
+                      {car.transmission && (
+                        <div className="flex items-center gap-1 mt-1.5 text-white/20 text-xs">
+                          <Settings className="w-3 h-3" />{car.transmission}
+                        </div>
+                      )}
                     </div>
                   </Link>
                 </motion.div>
               ))}
             </AnimatePresence>
           </motion.div>
+        ) : (
+          /* ─── LIST VIEW ─── */
+          <motion.div layout className="space-y-4">
+            <AnimatePresence mode="popLayout">
+              {filtered.map((car, i) => (
+                <motion.div
+                  key={car.id} layout
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.4, delay: i * 0.03, ease: [0.22, 1, 0.36, 1] }}
+                  className="group"
+                >
+                  <Link to={`/car/${car.id}`} className="block card-luxury">
+                    <div className="flex flex-col md:flex-row">
+                      {/* Image */}
+                      <div className="relative w-full md:w-72 h-48 md:h-auto flex-shrink-0 overflow-hidden">
+                        <img
+                          src={car.images?.[0]} alt={`${car.brand} ${car.model}`}
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                          loading="lazy"
+                        />
+                        {car.featured && (
+                          <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-[#14A79D]/90 text-white text-xs font-medium">
+                            Exklusiv
+                          </div>
+                        )}
+                        <button
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFav(car.id); }}
+                          className="absolute top-3 right-3 p-2 rounded-full bg-black/40 backdrop-blur-md text-white/60 hover:text-white transition-colors"
+                        >
+                          <Heart className={`w-4 h-4 ${favorites.includes(car.id) ? 'fill-red-500 text-red-500' : ''}`} />
+                        </button>
+                      </div>
+
+                      {/* Info */}
+                      <div className="flex-1 p-5 md:p-6 flex flex-col justify-between">
+                        <div>
+                          <h3 className="text-white font-display font-semibold text-lg tracking-tight group-hover:text-[#14A79D] transition-colors duration-300">
+                            {car.brand} {car.model}
+                          </h3>
+                          <div className="flex flex-wrap items-center gap-3 mt-2 text-white/30 text-xs">
+                            <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{car.year}</span>
+                            <span className="flex items-center gap-1"><Gauge className="w-3 h-3" />{car.mileage?.toLocaleString()} km</span>
+                            {car.fuel && <span className="flex items-center gap-1"><Fuel className="w-3 h-3" />{car.fuel}</span>}
+                            {car.transmission && <span className="flex items-center gap-1"><Settings className="w-3 h-3" />{car.transmission}</span>}
+                          </div>
+                          {car.description && (
+                            <p className="text-white/25 text-sm mt-3 line-clamp-2 leading-relaxed">{car.description}</p>
+                          )}
+                        </div>
+                        <div className="mt-4 flex items-end justify-between">
+                          <p className="text-white text-2xl font-display font-bold">€{car.price?.toLocaleString()}</p>
+                          <span className="text-[#14A79D] text-sm font-medium flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            Details <ArrowUpRight className="w-3.5 h-3.5" />
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </motion.div>
+        )}
+        </>
         )}
       </div>
     </div>
