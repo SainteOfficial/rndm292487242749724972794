@@ -157,42 +157,6 @@ const Navbar = () => {
           </motion.div>
         )}
       </AnimatePresence>
-      {/* Mobile Bottom Tab Bar */}
-      {!location.pathname.startsWith('/car/') && (
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#050505]/60 backdrop-blur-3xl border-t border-white/10 pb-safe">
-          <div className="flex items-center justify-around px-2 py-3">
-            {[
-              { name: 'Home', path: '/', icon: Home },
-              { name: 'Showroom', path: '/showroom', icon: CarFront },
-              { name: 'Galerie', path: '/gallery', icon: ImageIcon },
-              { name: 'Kontakt', path: '/contact', icon: MessageCircle },
-            ].map((tab) => {
-              const isActive = location.pathname === tab.path;
-              return (
-                <Link
-                  key={tab.name}
-                  to={tab.path}
-                  className="flex flex-col items-center gap-1 p-2"
-                >
-                  <tab.icon
-                    className={`w-5 h-5 transition-colors duration-300 ${
-                      isActive ? 'text-[#14A79D]' : 'text-white/40'
-                    }`}
-                    strokeWidth={isActive ? 2.5 : 1.5}
-                  />
-                  <span
-                    className={`text-[10px] font-medium transition-colors duration-300 ${
-                      isActive ? 'text-[#14A79D]' : 'text-white/40'
-                    }`}
-                  >
-                    {tab.name}
-                  </span>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      )}
     </>
   );
 };
