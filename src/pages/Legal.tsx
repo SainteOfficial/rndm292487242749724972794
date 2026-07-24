@@ -29,7 +29,7 @@ Telefon: +49 2306 9988585 (Festnetz)
 E-Mail: kfzhandelsmaya@autosmaya.de
 
 USt-IdNr.: DE-Nr. wird nachgereicht
-Zuständige Aufsichtsbehörde: Stadt Lünen
+Zuständige Aufsichtsbehörde: Stadt Dortmund
 
 Streitschlichtung:
 Die Europäische Kommission stellt eine Plattform zur Online-Streitbeilegung (OS) bereit: https://ec.europa.eu/consumers/odr/
