@@ -87,7 +87,7 @@ const Navbar = () => {
               </a>
               <Link
                 to="/showroom"
-                className="px-5 py-2 text-sm font-medium text-white bg-[#14A79D] rounded-full hover:bg-[#11968d] transition-all duration-300"
+                className="px-5 py-2 text-sm font-medium text-[#050505] bg-[#14A79D] rounded-full hover:bg-[#11968d] transition-all duration-300"
               >
                 Showroom
               </Link>

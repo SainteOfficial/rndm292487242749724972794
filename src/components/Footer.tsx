@@ -25,20 +25,20 @@ const Footer = () => (
         {/* Brand */}
         <div>
           <img src="/logov2.png" alt="Autosmaya" className="h-10 mb-6" />
-          <p className="text-white/35 text-sm leading-relaxed max-w-xs">
+          <p className="text-white/60 text-sm leading-relaxed max-w-xs">
             Premium Gebrauchtwagen in Dortmund. Handverlesene Qualität mit TÜV-Garantie.
           </p>
         </div>
 
         {/* Links */}
         <div>
-          <h4 className="text-white/50 text-xs uppercase tracking-[0.15em] font-medium mb-5">Navigation</h4>
+          <h2 className="text-white/60 text-xs uppercase tracking-[0.15em] font-medium mb-5">Navigation</h2>
           <ul className="space-y-3">
             {footerLinks.map(link => (
               <li key={link.label}>
                 <Link
                   to={link.to}
-                  className="text-white/40 text-sm hover:text-white transition-colors duration-300"
+                  className="text-white/60 text-sm hover:text-white transition-colors duration-300"
                 >
                   {link.label}
                 </Link>
@@ -49,25 +49,25 @@ const Footer = () => (
 
         {/* Contact */}
         <div>
-          <h4 className="text-white/50 text-xs uppercase tracking-[0.15em] font-medium mb-5">Kontakt</h4>
-          <ul className="space-y-3 text-sm text-white/40">
+          <h2 className="text-white/60 text-xs uppercase tracking-[0.15em] font-medium mb-5">Kontakt</h2>
+          <ul className="space-y-3 text-sm text-white/60">
             <li className="flex items-start gap-3">
-              <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0 text-white/25" />
+              <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0 text-white/50" />
               <span>Aplerbecker Straße 351<br />44287 Dortmund</span>
             </li>
             <li>
               <a href="tel:+4915153366666" className="flex items-center gap-3 hover:text-white transition-colors duration-300 mb-2">
-                <Phone className="w-4 h-4 flex-shrink-0 text-white/25" />
+                <Phone className="w-4 h-4 flex-shrink-0 text-white/50" />
                 +49 1515 3366666 (Mobil)
               </a>
-              <a href="tel:+4923069988585" className="flex items-center gap-3 text-white/50 hover:text-white transition-colors duration-300">
-                <Phone className="w-4 h-4 flex-shrink-0 text-white/10" />
+              <a href="tel:+4923069988585" className="flex items-center gap-3 text-white/60 hover:text-white transition-colors duration-300">
+                <Phone className="w-4 h-4 flex-shrink-0 text-white/50" />
                 +49 2306 9988585 (Festnetz)
               </a>
             </li>
             <li>
               <a href="mailto:kfzhandelsmaya@autosmaya.de" className="flex items-center gap-3 hover:text-white transition-colors duration-300">
-                <Mail className="w-4 h-4 flex-shrink-0 text-white/25" />
+                <Mail className="w-4 h-4 flex-shrink-0 text-white/50" />
                 kfzhandelsmaya@autosmaya.de
               </a>
             </li>
@@ -81,7 +81,8 @@ const Footer = () => (
                 href={s.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2.5 rounded-full border border-white/[0.06] text-white/30 hover:text-white hover:border-white/15 transition-all duration-300"
+                aria-label={s.label}
+                className="p-2.5 rounded-full border border-white/[0.06] text-white/50 hover:text-white hover:border-white/15 transition-all duration-300"
               >
                 <s.icon className="w-4 h-4" />
               </a>
@@ -94,7 +95,7 @@ const Footer = () => (
       <div className="section-separator mb-6" />
 
       {/* Bottom */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-white/25">
+      <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-white/50">
         <p>© {new Date().getFullYear()} Autosmaya. Alle Rechte vorbehalten.</p>
         <p>Mo–Fr 9–19 Uhr | Sa 10–18 Uhr</p>
       </div>

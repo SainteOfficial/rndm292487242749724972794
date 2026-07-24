@@ -129,7 +129,7 @@ const Home = () => {
       {/* ─── BRAND MARQUEE ─── */}
       <Section className="border-b border-white/[0.04]">
         <div className="max-w-[1400px] mx-auto px-6 md:px-16 lg:px-24">
-          <p className="text-center text-white/20 text-xs uppercase tracking-[0.2em] pt-10">Wir führen Fahrzeuge von</p>
+          <p className="text-center text-white/50 text-xs uppercase tracking-[0.2em] pt-10">Wir führen Fahrzeuge von</p>
         </div>
         <MarqueeLogos />
       </Section>
@@ -169,10 +169,12 @@ const Home = () => {
             </ParallaxText>
             <div className="hidden md:flex items-center gap-3">
               <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => scrollCars('left')}
+                aria-label="Vorherige Fahrzeuge anzeigen"
                 className="p-2.5 rounded-full border border-white/[0.08] text-white/40 hover:text-white hover:border-white/20 transition-all duration-300">
                 <ChevronLeft className="w-5 h-5" />
               </motion.button>
               <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => scrollCars('right')}
+                aria-label="Nächste Fahrzeuge anzeigen"
                 className="p-2.5 rounded-full border border-white/[0.08] text-white/40 hover:text-white hover:border-white/20 transition-all duration-300">
                 <ChevronRight className="w-5 h-5" />
               </motion.button>
@@ -359,6 +361,7 @@ const Home = () => {
               {testimonials.map((_, i) => (
                 <button
                   key={i}
+                  aria-label={`Kundenstimme ${i + 1} anzeigen`}
                   onClick={() => setActiveTestimonial(i)}
                   className={`rounded-full transition-all duration-300 ${
                     i === activeTestimonial

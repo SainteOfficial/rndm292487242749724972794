@@ -117,7 +117,7 @@ const Hero = () => {
                                 />
                                 <button
                                     type="submit"
-                                    className="px-6 md:px-8 py-3.5 bg-[#14A79D] text-white font-medium rounded-xl hover:bg-[#118f86] transition-colors shadow-lg shadow-[#14A79D]/20 flex items-center gap-2 group"
+                                    className="px-6 md:px-8 py-3.5 bg-[#14A79D] text-[#050505] font-medium rounded-xl hover:bg-[#118f86] transition-colors shadow-lg shadow-[#14A79D]/20 flex items-center gap-2 group"
                                 >
                                     Suchen
                                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
